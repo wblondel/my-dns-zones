@@ -77,8 +77,15 @@ var I_AM_PIGEON_MAIL_SERVER = [
     TLSA('_110._tcp.pigeon', 3, 1, 1, '74a1fbad23b52e8188b4fdefa6dc677877250f14d8552cc7cde0d8eb146c2801'),
 
     TXT('@', '"v=spf1 mx -all"'),
-    TXT('_dmarc', '"v=DMARC1; p=none; rua=mailto:dmarc-rua@williamblondel.fr"'),
-    TXT('*._report._dmarc', '"v=DMARC1"'),
+    TXT('_dmarc', '"v=DMARC1; p=none; rua=mailto:dmarc-rua@williamblondel.fr; ruf=mailto:dmarc-ruf@williamblondel.fr"'),
+
+    /* Wildcard record is cleaner but bad actors may try to exploit it. */
+    TXT('nocontexthumans.com._report._dmarc', '"v=DMARC1"'),
+    TXT('humansnocontext.com._report._dmarc', '"v=DMARC1"'),
+    TXT('williamgeraldblondel.com._report._dmarc', '"v=DMARC1"'),
+    TXT('williamblondel.me._report._dmarc', '"v=DMARC1"'),
+    TXT('williamblondel.com._report._dmarc', '"v=DMARC1"'),
+
     TXT('dkim._domainkey', '"v=DKIM1; k=rsa; t=s; s=email; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzT5Lk7vu33GtlbexF1lYjvLfTaJ2vmtFFgaz0e07W3RzYXz/MRZ3OZUmOuxxipuyu/wJRkJdYZ7KfjBvBLGC1D1VxLM5woDwalvFQYxperCw+9lA4mgNh2gA5CQkwSzAfZXRv+GSzurp/XmYQSbO+mtK71VK2Rz5R9wDjK73wIoHA2ZW/dA" "nf5uWfj/Me6Uf5GU1J2kjjr5iYhjYAQ/iMF23zUvrt3R1s8sE8TUbwe3eaw7V04hwMpIqngvTHEv+Jkzv+Zu9umylVBjWKIeLbvV1qGZtiznlWChhFFj3jPBcaAOHGrwutWzVMLSQKPseCkjBtd/igQTW7K4HTXJoKwIDAQAB"'),
     TXT('_carddavs._tcp', '"path=/SOGo/dav/"'),
     TXT('_caldavs._tcp', '"path=/SOGo/dav/"'),
