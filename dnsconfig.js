@@ -81,7 +81,7 @@ var I_AM_PIGEON_MAIL_SERVER = [
     TXT('@', '"v=spf1 mx -all"'),
     TXT('dkim._domainkey', '"v=DKIM1; k=rsa; t=s; s=email; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzT5Lk7vu33GtlbexF1lYjvLfTaJ2vmtFFgaz0e07W3RzYXz/MRZ3OZUmOuxxipuyu/wJRkJdYZ7KfjBvBLGC1D1VxLM5woDwalvFQYxperCw+9lA4mgNh2gA5CQkwSzAfZXRv+GSzurp/XmYQSbO+mtK71VK2Rz5R9wDjK73wIoHA2ZW/dA" "nf5uWfj/Me6Uf5GU1J2kjjr5iYhjYAQ/iMF23zUvrt3R1s8sE8TUbwe3eaw7V04hwMpIqngvTHEv+Jkzv+Zu9umylVBjWKIeLbvV1qGZtiznlWChhFFj3jPBcaAOHGrwutWzVMLSQKPseCkjBtd/igQTW7K4HTXJoKwIDAQAB"'),
     TXT('_dmarc', '"v=DMARC1; p=none; rua=mailto:dmarc-rua@williamblondel.fr; ruf=mailto:dmarc-ruf@williamblondel.fr; fo=1"'),
-    TXT('_mta-sts', '"v=STSv1; id=202106232052"'),
+    TXT('_mta-sts', '"v=STSv1; id=202106232127"'),
     TXT('_smtp._tls', '"v=TLSRPTv1; rua=mailto:tls-reports@williamblondel.fr"'),
 
     /* Wildcard record is cleaner but bad actors may try to exploit it. */
