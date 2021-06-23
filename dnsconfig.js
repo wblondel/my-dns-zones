@@ -77,7 +77,7 @@ var I_AM_PIGEON_MAIL_SERVER = [
     TLSA('_110._tcp.pigeon', 3, 1, 1, '74a1fbad23b52e8188b4fdefa6dc677877250f14d8552cc7cde0d8eb146c2801'),
 
     TXT('@', '"v=spf1 mx -all"'),
-    TXT('_dmarc', '"v=DMARC1; p=none; rua=mailto:dmarc-rua@williamblondel.fr; ruf=mailto:dmarc-ruf@williamblondel.fr"'),
+    TXT('_dmarc', '"v=DMARC1; p=none; rua=mailto:dmarc-rua@williamblondel.fr; ruf=mailto:dmarc-ruf@williamblondel.fr; fo=1"'),
 
     /* Wildcard record is cleaner but bad actors may try to exploit it. */
     TXT('nocontexthumans.com._report._dmarc', '"v=DMARC1"'),
