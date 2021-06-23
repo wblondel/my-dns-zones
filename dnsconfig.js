@@ -54,6 +54,8 @@ var I_AM_PIGEON_MAIL_SERVER = [
 
     CNAME('autodiscover', 'pigeon'),
     CNAME('autoconfig', 'pigeon'),
+    /* TODO: make mailcow host this file instead */
+    CNAME('mta-sts', 'einstein'),
 
     SRV('_submission._tcp', 0, 1, 587, 'pigeon.williamblondel.fr.'),
     SRV('_smtps._tcp', 0, 1, 465, 'pigeon.williamblondel.fr.'),
@@ -77,7 +79,10 @@ var I_AM_PIGEON_MAIL_SERVER = [
     TLSA('_110._tcp.pigeon', 3, 1, 1, '74a1fbad23b52e8188b4fdefa6dc677877250f14d8552cc7cde0d8eb146c2801'),
 
     TXT('@', '"v=spf1 mx -all"'),
+    TXT('dkim._domainkey', '"v=DKIM1; k=rsa; t=s; s=email; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzT5Lk7vu33GtlbexF1lYjvLfTaJ2vmtFFgaz0e07W3RzYXz/MRZ3OZUmOuxxipuyu/wJRkJdYZ7KfjBvBLGC1D1VxLM5woDwalvFQYxperCw+9lA4mgNh2gA5CQkwSzAfZXRv+GSzurp/XmYQSbO+mtK71VK2Rz5R9wDjK73wIoHA2ZW/dA" "nf5uWfj/Me6Uf5GU1J2kjjr5iYhjYAQ/iMF23zUvrt3R1s8sE8TUbwe3eaw7V04hwMpIqngvTHEv+Jkzv+Zu9umylVBjWKIeLbvV1qGZtiznlWChhFFj3jPBcaAOHGrwutWzVMLSQKPseCkjBtd/igQTW7K4HTXJoKwIDAQAB"'),
     TXT('_dmarc', '"v=DMARC1; p=none; rua=mailto:dmarc-rua@williamblondel.fr; ruf=mailto:dmarc-ruf@williamblondel.fr; fo=1"'),
+    TXT('_mta-sts', '"v=STSv1; id=202106232052"'),
+    TXT('_smtp._tls', '"v=TLSRPTv1; rua=mailto:tls-reports@williamblondel.fr"'),
 
     /* Wildcard record is cleaner but bad actors may try to exploit it. */
     TXT('nocontexthumans.com._report._dmarc', '"v=DMARC1"'),
@@ -86,7 +91,6 @@ var I_AM_PIGEON_MAIL_SERVER = [
     TXT('williamblondel.me._report._dmarc', '"v=DMARC1"'),
     TXT('williamblondel.com._report._dmarc', '"v=DMARC1"'),
 
-    TXT('dkim._domainkey', '"v=DKIM1; k=rsa; t=s; s=email; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzT5Lk7vu33GtlbexF1lYjvLfTaJ2vmtFFgaz0e07W3RzYXz/MRZ3OZUmOuxxipuyu/wJRkJdYZ7KfjBvBLGC1D1VxLM5woDwalvFQYxperCw+9lA4mgNh2gA5CQkwSzAfZXRv+GSzurp/XmYQSbO+mtK71VK2Rz5R9wDjK73wIoHA2ZW/dA" "nf5uWfj/Me6Uf5GU1J2kjjr5iYhjYAQ/iMF23zUvrt3R1s8sE8TUbwe3eaw7V04hwMpIqngvTHEv+Jkzv+Zu9umylVBjWKIeLbvV1qGZtiznlWChhFFj3jPBcaAOHGrwutWzVMLSQKPseCkjBtd/igQTW7K4HTXJoKwIDAQAB"'),
     TXT('_carddavs._tcp', '"path=/SOGo/dav/"'),
     TXT('_caldavs._tcp', '"path=/SOGo/dav/"'),
 
