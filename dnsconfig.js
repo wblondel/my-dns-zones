@@ -5,7 +5,6 @@
 // Providers:
 
 var REG_NONE = NewRegistrar('none', 'NONE');
-var REG_OVH = NewRegistrar('ovh', 'OVH');
 var deSEC = NewDnsProvider('desec', 'DESEC');
 
 // "macro" for records that can be mixed into any zone
@@ -42,6 +41,9 @@ var USE_PIGEON_MAIL_SERVER = [
     CNAME('autoconfig', 'pigeon.williamblondel.fr.'),
     CNAME('autodiscover', 'pigeon.williamblondel.fr.'),
     CNAME('_dmarc', '_dmarc.williamblondel.fr.'),
+    CNAME('mta-sts', 'mta-sts.williamblondel.fr.'),
+    CNAME('_mta-sts', '_mta-sts.williamblondel.fr.'),
+    CNAME('_smtp._tls', '_smtp._tls.williamblondel.fr.'),
 
     SRV('_autodiscover._tcp', 0, 1, 443, 'pigeon.williamblondel.fr.'),
 
@@ -55,7 +57,7 @@ var I_AM_PIGEON_MAIL_SERVER = [
     CNAME('autodiscover', 'pigeon'),
     CNAME('autoconfig', 'pigeon'),
     /* TODO: make mailcow host this file instead */
-    CNAME('mta-sts', 'einstein'),
+    CNAME('mta-sts', 'wblondel.github.io.'),
 
     SRV('_submission._tcp', 0, 1, 587, 'pigeon.williamblondel.fr.'),
     SRV('_smtps._tcp', 0, 1, 465, 'pigeon.williamblondel.fr.'),
@@ -113,7 +115,7 @@ DEFAULTS(
     DefaultTTL('1h')
 );
 
-D('nocontexthumans.com', REG_OVH, DnsProvider(deSEC),
+D('nocontexthumans.com', REG_NONE, DnsProvider(deSEC),
     CONTABO_WEB_SERVER_APEX,
     USE_PIGEON_MAIL_SERVER,
 
@@ -132,7 +134,7 @@ D('humansnocontext.com', REG_NONE, DnsProvider(deSEC),
     TXT('dkim._domainkey', '"v=DKIM1;k=rsa;t=s;s=email;p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApvhI9PJ9HFGyzn9RSAjckdx+9KNn1F/VBhtQEMC09OjX0asqYbduE4cKCTRh70DiaPvcqMMH6Re/h8V6BjwU15XcYzhI80xxY3kWYq/ZyiLLGUR3LSP1otGXtVQM3J70yTmb9WpM7Bqd0sU7NdR/OxIGJAGMZQ1a1DKWNn0Jx22BmzTx8TNVz2N" "hAwlXlt7sxH8bqapc/r20nyOvuODxZvrr6M+jyfPur8Qx5K2lFF3tfnOpu3K/Z45I3huYRDj4GH23reW+JRlx1OyANWn01+JM8RyVnc8s1b7cRylI94eyrF6LE9/xsAw8gG+qYJatXEMOZsbWK799dtog7PqPoQIDAQAB"')
 );
 
-D('williamgeraldblondel.com', REG_OVH, DnsProvider(deSEC),
+D('williamgeraldblondel.com', REG_NONE, DnsProvider(deSEC),
     CONTABO_WEB_SERVER_APEX,
     USE_PIGEON_MAIL_SERVER,
 
@@ -141,7 +143,7 @@ D('williamgeraldblondel.com', REG_OVH, DnsProvider(deSEC),
     TXT('dkim._domainkey', '"v=DKIM1; k=rsa; t=s; s=email; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA6nkxbCRXW5aigVBTS5u7/xdZ8a2gKMuCj/C5LIQKWhKuv0sEHjnj8oqQeyxxsJrmBv/2tUyY9DnZoZcMfN7fh7GnVbg0BMaIurXnUXkxfeDUCtklnW390gLGHVzdZnJVoYi6XQ6KwRCqvmANAgFltv76+m8ANxoo5N660URWzSJsqw7jSiH" "UzYhFZXienU94ePNH1SSrRXJSdksGuvp4j14gNoHGdWcn4g2KGayNxuAyj1Vxuxq+i5DYaoX+UXpUz//vgebk2aoITAL5Ugp9LNbvRftQFeAMMAwvn2yKw9aUBtzPMlARmboc440M+/hCk2DQOqMisKuIDIhtFrj4EQIDAQAB"')
 );
 
-D('williamblondel.me', REG_OVH, DnsProvider(deSEC),
+D('williamblondel.me', REG_NONE, DnsProvider(deSEC),
     CONTABO_WEB_SERVER_APEX,
     USE_PIGEON_MAIL_SERVER,
 
@@ -150,7 +152,7 @@ D('williamblondel.me', REG_OVH, DnsProvider(deSEC),
     TXT('dkim._domainkey', '"v=DKIM1; k=rsa; t=s; s=email; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAoAemeKbfFtMNbp+bdnO57sed2oZjEgbMoziagHpENsTmwC4w4/lb8IeAtdPIawrT/cNMV9IKcj1rRQPZWBbzqLOz+RKjc+Y44aMflZTI+a6HYCt/mrkwwDpb4Ecw0UfFUrVs6vvmv8UGx7dAUBkzyw9ddpbqavqzmqFO/7+YygiUf3eArA3" "PjdDBKjAMfc5xeiNoiaa4MnpleyZpVduB9D8421tJThUabuqQ+JdYJyzgUlhiK+Vv2tX/oYoM1u1ud0j30N9g/2b9Otom4VDdew2kdSv00/GtBldErRHDuT995oqXFCr+5twp56g2E87qSqI9ZJxwhqjDCBawgjVFoQIDAQAB"')
 );
 
-D('williamblondel.com', REG_OVH, DnsProvider(deSEC),
+D('williamblondel.com', REG_NONE, DnsProvider(deSEC),
     CONTABO_WEB_SERVER_APEX,
     USE_PIGEON_MAIL_SERVER,
 
@@ -159,7 +161,7 @@ D('williamblondel.com', REG_OVH, DnsProvider(deSEC),
     TXT('dkim._domainkey', '"v=DKIM1; k=rsa; t=s; s=email; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA2bz9Hm77fkCIgqqnFqtWyfmOLiZxYQmL64Dzhfqo2WefcUfYeXqwUn0sTaajJPF9arXpSWyuFUcKnNx6pNKnYPlR/9RVU+N+WGk6ZinlzEpkLrG753nhQyukiLWV4QJNRoNpI3uCALYWRmcT5ua/plS1+RniJ5ojZvVHiIOE3fdzlfTldhO" "3mHJ6MCStX+CYYdaauNsA31W8SvkllkEKoFYaQCgojs6nKNHKnk2L1X/NXMPQZ53ItysvvoDrT+tikQcVcYqMC4kmb1cCb/tT/oXdMM88Ff+1HJoTy8uhEQdpi1fTItYgKPEnoD6TxtjSmLPlwwBq8bA4H5I3QfMEvQIDAQAB"')
 );
 
-D('williamblondel.fr', REG_OVH, DnsProvider(deSEC),
+D('williamblondel.fr', REG_NONE, DnsProvider(deSEC),
     CONTABO_WEB_SERVER_APEX,
     CONTABO_WEB_SERVER_SUBDOMAIN,
     I_AM_PIGEON_MAIL_SERVER,
