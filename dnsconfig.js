@@ -47,7 +47,7 @@ var USE_PIGEON_MAIL_SERVER = [
 
     SRV('_autodiscover._tcp', 0, 1, 443, 'pigeon.williamblondel.fr.'),
 
-    TXT('@', '"v=spf1 mx -all"')
+    TXT('@', 'v=spf1 mx -all')
 ];
 
 var I_AM_PIGEON_MAIL_SERVER = [
@@ -80,23 +80,37 @@ var I_AM_PIGEON_MAIL_SERVER = [
     TLSA('_143._tcp.pigeon', 3, 1, 1, '74a1fbad23b52e8188b4fdefa6dc677877250f14d8552cc7cde0d8eb146c2801'),
     TLSA('_110._tcp.pigeon', 3, 1, 1, '74a1fbad23b52e8188b4fdefa6dc677877250f14d8552cc7cde0d8eb146c2801'),
 
-    TXT('@', '"v=spf1 mx -all"'),
-    TXT('dkim._domainkey', '"v=DKIM1; k=rsa; t=s; s=email; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzT5Lk7vu33GtlbexF1lYjvLfTaJ2vmtFFgaz0e07W3RzYXz/MRZ3OZUmOuxxipuyu/wJRkJdYZ7KfjBvBLGC1D1VxLM5woDwalvFQYxperCw+9lA4mgNh2gA5CQkwSzAfZXRv+GSzurp/XmYQSbO+mtK71VK2Rz5R9wDjK73wIoHA2ZW/dA" "nf5uWfj/Me6Uf5GU1J2kjjr5iYhjYAQ/iMF23zUvrt3R1s8sE8TUbwe3eaw7V04hwMpIqngvTHEv+Jkzv+Zu9umylVBjWKIeLbvV1qGZtiznlWChhFFj3jPBcaAOHGrwutWzVMLSQKPseCkjBtd/igQTW7K4HTXJoKwIDAQAB"'),
-    TXT('_dmarc', '"v=DMARC1; p=none; rua=mailto:dmarc-rua@williamblondel.fr; ruf=mailto:dmarc-ruf@williamblondel.fr; fo=1"'),
-    TXT('_mta-sts', '"v=STSv1; id=202106232127"'),
-    TXT('_smtp._tls', '"v=TLSRPTv1; rua=mailto:tls-reports@williamblondel.fr"'),
+    TXT('@', 'v=spf1 mx -all'),
+    TXT('dkim._domainkey', 'v=DKIM1; k=rsa; t=s; s=email; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzT5Lk7vu33GtlbexF1lYjvLfTaJ2vmtFFgaz0e07W3RzYXz/MRZ3OZUmOuxxipuyu/wJRkJdYZ7KfjBvBLGC1D1VxLM5woDwalvFQYxperCw+9lA4mgNh2gA5CQkwSzAfZXRv+GSzurp/XmYQSbO+mtK71VK2Rz5R9wDjK73wIoHA2ZW/dAnf5uWfj/Me6Uf5GU1J2kjjr5iYhjYAQ/iMF23zUvrt3R1s8sE8TUbwe3eaw7V04hwMpIqngvTHEv+Jkzv+Zu9umylVBjWKIeLbvV1qGZtiznlWChhFFj3jPBcaAOHGrwutWzVMLSQKPseCkjBtd/igQTW7K4HTXJoKwIDAQAB'),
+    
+    DMARC_BUILDER({
+        policy: 'reject',
+        percent: 100,
+        alignmentSPF: 's',
+        alignmentDKIM: 's',
+        rua: [
+            'mailto:dmarc-rua@williamblondel.fr'
+        ],
+        ruf: [
+            'mailto:dmarc-ruf@williamblondel.fr'
+        ],
+        failureOptions: '1'
+    }),
+
+    TXT('_mta-sts', 'v=STSv1; id=202106232127'),
+    TXT('_smtp._tls', 'v=TLSRPTv1; rua=mailto:tls-reports@williamblondel.fr'),
 
     /* Wildcard record is cleaner but bad actors may try to exploit it. */
-    TXT('nocontexthumans.com._report._dmarc', '"v=DMARC1"'),
-    TXT('humansnocontext.com._report._dmarc', '"v=DMARC1"'),
-    TXT('williamgeraldblondel.com._report._dmarc', '"v=DMARC1"'),
-    TXT('williamblondel.me._report._dmarc', '"v=DMARC1"'),
-    TXT('williamblondel.com._report._dmarc', '"v=DMARC1"'),
+    TXT('nocontexthumans.com._report._dmarc', 'v=DMARC1'),
+    TXT('humansnocontext.com._report._dmarc', 'v=DMARC1'),
+    TXT('williamgeraldblondel.com._report._dmarc', 'v=DMARC1'),
+    TXT('williamblondel.me._report._dmarc', 'v=DMARC1'),
+    TXT('williamblondel.com._report._dmarc', 'v=DMARC1'),
 
-    TXT('_carddavs._tcp', '"path=/SOGo/dav/"'),
-    TXT('_caldavs._tcp', '"path=/SOGo/dav/"'),
+    TXT('_carddavs._tcp', 'path=/SOGo/dav/'),
+    TXT('_caldavs._tcp', 'path=/SOGo/dav/'),
 
-    TXT('_token._dnswl', '"vpazhfyv3wzniifjf1f3bg579hy9x3ws"'),
+    TXT('_token._dnswl', 'vpazhfyv3wzniifjf1f3bg579hy9x3ws'),
 
     SSHFP('pigeon', 1, 1, 'dd7c94a57191f31a0ba6fbac80fd5fbb24193e05'),
     SSHFP('pigeon', 1, 2, '84c1eba3537839e7c62e94294a6051106cab83f28fe53b30d437be749d7df5e8'),
@@ -120,9 +134,9 @@ D('nocontexthumans.com', REG_NONE, DnsProvider(deSEC),
     USE_PIGEON_MAIL_SERVER,
 
     CNAME('www', '@'),
-    TXT('@', '"google-site-verification=uI73RR9Zq9XnKrmb6a5UyPAa8Gu486RIlEnxfo9u4wc"'),
-    TXT('_acme-challenge', '"qYlvEyWFmNbmzyyF3qTARpS9Co1qfqZFKvCFDEE6daw"'),
-    TXT('dkim._domainkey', '"v=DKIM1;k=rsa;t=s;s=email;p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAs8vJ5LfGUt2fZ3MzoO5i2BP0WTeXFkuxbS6YlznFPUj7uQ/MC2k1UC8vB6n7BmUZM2cMYLvQs8Dk1LrsFThHx6bm7gb1RrhFv7qHFi3YNhDySEbJRDrvyGIYDjznsAkvfqUYwd7fOnDuDeX7KnZ9izJZFsfpceCnWLUGiY49WoADUFWJAyDTqMC" "HkAeO5QOW5HiiilS8FWhyd7EtkZ5WVEdpP9yPawf2a25nqcR7seHib5SGBcZ06nbN13DhuHHR7WAWDQjYw2rWvlTBK6EMDNZBYuhp7AgwN240KxtEzkzzNEf5eBqNt1bI87bBKF4LU6/+VHhk7qkmluL8HfByRwIDAQAB"')
+    TXT('@', 'google-site-verification=uI73RR9Zq9XnKrmb6a5UyPAa8Gu486RIlEnxfo9u4wc'),
+    TXT('_acme-challenge', 'qYlvEyWFmNbmzyyF3qTARpS9Co1qfqZFKvCFDEE6daw'),
+    TXT('dkim._domainkey', 'v=DKIM1;k=rsa;t=s;s=email;p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAs8vJ5LfGUt2fZ3MzoO5i2BP0WTeXFkuxbS6YlznFPUj7uQ/MC2k1UC8vB6n7BmUZM2cMYLvQs8Dk1LrsFThHx6bm7gb1RrhFv7qHFi3YNhDySEbJRDrvyGIYDjznsAkvfqUYwd7fOnDuDeX7KnZ9izJZFsfpceCnWLUGiY49WoADUFWJAyDTqMCHkAeO5QOW5HiiilS8FWhyd7EtkZ5WVEdpP9yPawf2a25nqcR7seHib5SGBcZ06nbN13DhuHHR7WAWDQjYw2rWvlTBK6EMDNZBYuhp7AgwN240KxtEzkzzNEf5eBqNt1bI87bBKF4LU6/+VHhk7qkmluL8HfByRwIDAQAB')
 );
 
 D('humansnocontext.com', REG_NONE, DnsProvider(deSEC),
@@ -130,8 +144,8 @@ D('humansnocontext.com', REG_NONE, DnsProvider(deSEC),
     USE_PIGEON_MAIL_SERVER,
 
     CNAME('www', '@'),
-    TXT('@', '"google-site-verification=7MDxCh8kAIR12Y-WiLIJV1c9QyZE_1UEboJy0HYz6wo"'),
-    TXT('dkim._domainkey', '"v=DKIM1;k=rsa;t=s;s=email;p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApvhI9PJ9HFGyzn9RSAjckdx+9KNn1F/VBhtQEMC09OjX0asqYbduE4cKCTRh70DiaPvcqMMH6Re/h8V6BjwU15XcYzhI80xxY3kWYq/ZyiLLGUR3LSP1otGXtVQM3J70yTmb9WpM7Bqd0sU7NdR/OxIGJAGMZQ1a1DKWNn0Jx22BmzTx8TNVz2N" "hAwlXlt7sxH8bqapc/r20nyOvuODxZvrr6M+jyfPur8Qx5K2lFF3tfnOpu3K/Z45I3huYRDj4GH23reW+JRlx1OyANWn01+JM8RyVnc8s1b7cRylI94eyrF6LE9/xsAw8gG+qYJatXEMOZsbWK799dtog7PqPoQIDAQAB"')
+    TXT('@', 'google-site-verification=7MDxCh8kAIR12Y-WiLIJV1c9QyZE_1UEboJy0HYz6wo'),
+    TXT('dkim._domainkey', 'v=DKIM1;k=rsa;t=s;s=email;p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApvhI9PJ9HFGyzn9RSAjckdx+9KNn1F/VBhtQEMC09OjX0asqYbduE4cKCTRh70DiaPvcqMMH6Re/h8V6BjwU15XcYzhI80xxY3kWYq/ZyiLLGUR3LSP1otGXtVQM3J70yTmb9WpM7Bqd0sU7NdR/OxIGJAGMZQ1a1DKWNn0Jx22BmzTx8TNVz2NhAwlXlt7sxH8bqapc/r20nyOvuODxZvrr6M+jyfPur8Qx5K2lFF3tfnOpu3K/Z45I3huYRDj4GH23reW+JRlx1OyANWn01+JM8RyVnc8s1b7cRylI94eyrF6LE9/xsAw8gG+qYJatXEMOZsbWK799dtog7PqPoQIDAQAB')
 );
 
 D('williamgeraldblondel.com', REG_NONE, DnsProvider(deSEC),
@@ -139,8 +153,8 @@ D('williamgeraldblondel.com', REG_NONE, DnsProvider(deSEC),
     USE_PIGEON_MAIL_SERVER,
 
     CNAME('www', '@'),
-    TXT('@', '"google-site-verification=-PHdusIhuUxLTmvLTE_HPP-Owr0QC6P6h4pJCnwehCI"'),
-    TXT('dkim._domainkey', '"v=DKIM1; k=rsa; t=s; s=email; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA6nkxbCRXW5aigVBTS5u7/xdZ8a2gKMuCj/C5LIQKWhKuv0sEHjnj8oqQeyxxsJrmBv/2tUyY9DnZoZcMfN7fh7GnVbg0BMaIurXnUXkxfeDUCtklnW390gLGHVzdZnJVoYi6XQ6KwRCqvmANAgFltv76+m8ANxoo5N660URWzSJsqw7jSiH" "UzYhFZXienU94ePNH1SSrRXJSdksGuvp4j14gNoHGdWcn4g2KGayNxuAyj1Vxuxq+i5DYaoX+UXpUz//vgebk2aoITAL5Ugp9LNbvRftQFeAMMAwvn2yKw9aUBtzPMlARmboc440M+/hCk2DQOqMisKuIDIhtFrj4EQIDAQAB"')
+    TXT('@', 'google-site-verification=-PHdusIhuUxLTmvLTE_HPP-Owr0QC6P6h4pJCnwehCI'),
+    TXT('dkim._domainkey', 'v=DKIM1; k=rsa; t=s; s=email; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA6nkxbCRXW5aigVBTS5u7/xdZ8a2gKMuCj/C5LIQKWhKuv0sEHjnj8oqQeyxxsJrmBv/2tUyY9DnZoZcMfN7fh7GnVbg0BMaIurXnUXkxfeDUCtklnW390gLGHVzdZnJVoYi6XQ6KwRCqvmANAgFltv76+m8ANxoo5N660URWzSJsqw7jSiHUzYhFZXienU94ePNH1SSrRXJSdksGuvp4j14gNoHGdWcn4g2KGayNxuAyj1Vxuxq+i5DYaoX+UXpUz//vgebk2aoITAL5Ugp9LNbvRftQFeAMMAwvn2yKw9aUBtzPMlARmboc440M+/hCk2DQOqMisKuIDIhtFrj4EQIDAQAB')
 );
 
 D('williamblondel.me', REG_NONE, DnsProvider(deSEC),
@@ -148,8 +162,8 @@ D('williamblondel.me', REG_NONE, DnsProvider(deSEC),
     USE_PIGEON_MAIL_SERVER,
 
     CNAME('www', '@'),
-    TXT('@', '"google-site-verification=UCT4g0KPI-XFFSlHuRavg5Sl374ijtHdq76eKL4xDtw"'),
-    TXT('dkim._domainkey', '"v=DKIM1; k=rsa; t=s; s=email; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAoAemeKbfFtMNbp+bdnO57sed2oZjEgbMoziagHpENsTmwC4w4/lb8IeAtdPIawrT/cNMV9IKcj1rRQPZWBbzqLOz+RKjc+Y44aMflZTI+a6HYCt/mrkwwDpb4Ecw0UfFUrVs6vvmv8UGx7dAUBkzyw9ddpbqavqzmqFO/7+YygiUf3eArA3" "PjdDBKjAMfc5xeiNoiaa4MnpleyZpVduB9D8421tJThUabuqQ+JdYJyzgUlhiK+Vv2tX/oYoM1u1ud0j30N9g/2b9Otom4VDdew2kdSv00/GtBldErRHDuT995oqXFCr+5twp56g2E87qSqI9ZJxwhqjDCBawgjVFoQIDAQAB"')
+    TXT('@', 'google-site-verification=UCT4g0KPI-XFFSlHuRavg5Sl374ijtHdq76eKL4xDtw'),
+    TXT('dkim._domainkey', 'v=DKIM1; k=rsa; t=s; s=email; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAoAemeKbfFtMNbp+bdnO57sed2oZjEgbMoziagHpENsTmwC4w4/lb8IeAtdPIawrT/cNMV9IKcj1rRQPZWBbzqLOz+RKjc+Y44aMflZTI+a6HYCt/mrkwwDpb4Ecw0UfFUrVs6vvmv8UGx7dAUBkzyw9ddpbqavqzmqFO/7+YygiUf3eArA3PjdDBKjAMfc5xeiNoiaa4MnpleyZpVduB9D8421tJThUabuqQ+JdYJyzgUlhiK+Vv2tX/oYoM1u1ud0j30N9g/2b9Otom4VDdew2kdSv00/GtBldErRHDuT995oqXFCr+5twp56g2E87qSqI9ZJxwhqjDCBawgjVFoQIDAQAB')
 );
 
 D('williamblondel.com', REG_NONE, DnsProvider(deSEC),
@@ -157,8 +171,8 @@ D('williamblondel.com', REG_NONE, DnsProvider(deSEC),
     USE_PIGEON_MAIL_SERVER,
 
     CNAME('www', '@'),
-    TXT('@', '"google-site-verification=GEYEnGb82U27JpPR3oG-FzJ8Im49KiyCa3rGzcViDmk"'),
-    TXT('dkim._domainkey', '"v=DKIM1; k=rsa; t=s; s=email; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA2bz9Hm77fkCIgqqnFqtWyfmOLiZxYQmL64Dzhfqo2WefcUfYeXqwUn0sTaajJPF9arXpSWyuFUcKnNx6pNKnYPlR/9RVU+N+WGk6ZinlzEpkLrG753nhQyukiLWV4QJNRoNpI3uCALYWRmcT5ua/plS1+RniJ5ojZvVHiIOE3fdzlfTldhO" "3mHJ6MCStX+CYYdaauNsA31W8SvkllkEKoFYaQCgojs6nKNHKnk2L1X/NXMPQZ53ItysvvoDrT+tikQcVcYqMC4kmb1cCb/tT/oXdMM88Ff+1HJoTy8uhEQdpi1fTItYgKPEnoD6TxtjSmLPlwwBq8bA4H5I3QfMEvQIDAQAB"')
+    TXT('@', 'google-site-verification=GEYEnGb82U27JpPR3oG-FzJ8Im49KiyCa3rGzcViDmk'),
+    TXT('dkim._domainkey', 'v=DKIM1; k=rsa; t=s; s=email; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA2bz9Hm77fkCIgqqnFqtWyfmOLiZxYQmL64Dzhfqo2WefcUfYeXqwUn0sTaajJPF9arXpSWyuFUcKnNx6pNKnYPlR/9RVU+N+WGk6ZinlzEpkLrG753nhQyukiLWV4QJNRoNpI3uCALYWRmcT5ua/plS1+RniJ5ojZvVHiIOE3fdzlfTldhO3mHJ6MCStX+CYYdaauNsA31W8SvkllkEKoFYaQCgojs6nKNHKnk2L1X/NXMPQZ53ItysvvoDrT+tikQcVcYqMC4kmb1cCb/tT/oXdMM88Ff+1HJoTy8uhEQdpi1fTItYgKPEnoD6TxtjSmLPlwwBq8bA4H5I3QfMEvQIDAQAB')
 );
 
 D('williamblondel.fr', REG_NONE, DnsProvider(deSEC),
@@ -172,8 +186,8 @@ D('williamblondel.fr', REG_NONE, DnsProvider(deSEC),
 
     MX('@', 10, 'pigeon.williamblondel.fr.'),
 
-    TXT('@', '"abuseipdb-verification=s5qjw8Yf"'),
-    TXT('@', '"google-site-verification=AsBRY1djNmUyPuEhPpftRTPafx6j2EtGl6xWFFAsZ0c"'),
-    TXT('@', '"keybase-site-verification=C_z29b6Vah7pgfISyRn2Uxd8iq4M-f3Osvr2uWbPg3E"'),
-    TXT('_acme-challenge', '"d6Q1iS62JZVaKviU53M9xIXZikFi50xinhLdc0L02uc"')
+    TXT('@', 'abuseipdb-verification=s5qjw8Yf'),
+    TXT('@', 'google-site-verification=AsBRY1djNmUyPuEhPpftRTPafx6j2EtGl6xWFFAsZ0c'),
+    TXT('@', 'keybase-site-verification=C_z29b6Vah7pgfISyRn2Uxd8iq4M-f3Osvr2uWbPg3E'),
+    TXT('_acme-challenge', 'd6Q1iS62JZVaKviU53M9xIXZikFi50xinhLdc0L02uc')
 );
