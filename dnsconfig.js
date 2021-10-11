@@ -97,7 +97,7 @@ var I_AM_PIGEON_MAIL_SERVER = [
         failureOptions: '1'
     }),
 
-    TXT('_mta-sts', 'v=STSv1; id=202106232127'),
+    TXT('_mta-sts', 'v=STSv1; id=202110111304'),
     TXT('_smtp._tls', 'v=TLSRPTv1; rua=mailto:tls-reports@williamblondel.fr'),
 
     /* Wildcard record is cleaner but bad actors may try to exploit it. */
