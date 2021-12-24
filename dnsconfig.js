@@ -181,7 +181,6 @@ D('williamblondel.fr', REG_NONE, DnsProvider(deSEC),
     I_AM_PIGEON_MAIL_SERVER,
     
     CNAME('www', '@'),
-    CNAME('remark', 'einstein'),
     CNAME('actes', 'einstein'),
 
     MX('@', 10, 'pigeon.williamblondel.fr.'),
