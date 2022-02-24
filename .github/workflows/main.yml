@@ -1,0 +1,61 @@
+name: Check JS file
+
+on: pull_request
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: DNSControl check
+        uses: koenrh/dnscontrol-action@v3
+        with:
+          args: check
+
+name: Preview
+
+on: pull_request
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: DNSControl preview
+        uses: koenrh/dnscontrol-action@v3
+        id: dnscontrol_preview
+        with:
+          args: preview
+
+      - name: Preview pull request comment
+        uses: unsplash/comment-on-pr@v1.2.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          msg: |
+            ```
+            ${{ steps.dnscontrol_preview.outputs.preview_comment }}
+            ```
+          check_for_duplicate_msg: true
+
+name: Push
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    environment: production    
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: DNSControl push
+        uses: koenrh/dnscontrol-action@v3
+        with:
+          args: push

@@ -1,0 +1,5 @@
+{
+  "desec": {
+    "auth-token": "$DESEC_API_TOKEN"
+  }
+}
