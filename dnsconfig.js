@@ -36,7 +36,7 @@ var CONTABO_WEB_SERVER_SUBDOMAIN = [
 ];
 
 var USE_PIGEON_MAIL_SERVER = [
-    MX('@', 10, 'pigeon.williamblondel.fr.'),
+    MX('@', 5, 'pigeon.williamblondel.fr.'),
 
     CNAME('autoconfig', 'pigeon.williamblondel.fr.'),
     CNAME('autodiscover', 'pigeon.williamblondel.fr.'),
