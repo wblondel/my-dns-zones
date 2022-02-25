@@ -8,11 +8,11 @@ on:
 jobs:
   push:
     runs-on: ubuntu-latest
+    environment: production
     steps:
       - uses: actions/checkout@v2
 
       - name: DNSControl push
         uses: koenrh/dnscontrol-action@v3
-        environment: production
         with:
           args: push
