@@ -4,6 +4,7 @@ on: pull_request
 
 jobs:
   check:
+    if: github.actor!= 'dependabot[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -14,6 +15,7 @@ jobs:
           args: check
 
   preview:
+    if: github.actor!= 'dependabot[bot]'
     runs-on: ubuntu-latest
     environment: production
     env:
