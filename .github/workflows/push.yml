@@ -13,7 +13,7 @@ jobs:
       DESEC_API_TOKEN: ${{ secrets.DESEC_API_TOKEN }}
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: DNSControl push
         uses: koenrh/dnscontrol-action@v3
