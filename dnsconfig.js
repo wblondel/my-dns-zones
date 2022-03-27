@@ -130,7 +130,7 @@ DEFAULTS(
     DefaultTTL('1h')
 );
 
-D('parisb.rest', REG_NONE, DnsProider(deSEC),
+D('parisb.rest', REG_NONE, DnsProvider(deSEC),
     CONTABO_WEB_SERVER_APEX,
     USE_PIGEON_MAIL_SERVER,
 
