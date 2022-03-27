@@ -101,6 +101,7 @@ var I_AM_PIGEON_MAIL_SERVER = [
     TXT('_smtp._tls', 'v=TLSRPTv1; rua=mailto:tls-reports@williamblondel.fr'),
 
     /* Wildcard record is cleaner but bad actors may try to exploit it. */
+    TXT('parisb.rest._report._dmarc', 'v=DMARC1'),
     TXT('nocontexthumans.com._report._dmarc', 'v=DMARC1'),
     TXT('humansnocontext.com._report._dmarc', 'v=DMARC1'),
     TXT('williamgeraldblondel.com._report._dmarc', 'v=DMARC1'),
@@ -127,6 +128,14 @@ var I_AM_PIGEON_MAIL_SERVER = [
 
 DEFAULTS(
     DefaultTTL('1h')
+);
+
+D('parisb.rest', REG_NONE, DnsProvider(deSEC),
+    CONTABO_WEB_SERVER_APEX,
+    USE_PIGEON_MAIL_SERVER,
+
+    CNAME('www', '@'),
+    TXT('dkim._domainkey', 'v=DKIM1;k=rsa;t=s;s=email;p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA2D+UGR/gmJLW04N2RY4DyBFsjByEJ4p5d1gpLvAEZLWX+S+a4JEf8JIRO7LxBI8ZXnlIW50mwqImgMwbSTCJ1law0/XVMiEUlIk6/C+rqNf5WyZNYHmRhvFHSCLrPq/jdzK5cPdZMqIA/RzwcN/m95GfAurkGq58Y/iZkv6WtZaynWdrkwgK99rLSruqR4LLH6memJo7dDlmRJ6GZ8PkGuBHXCSrRv18xX0PdUowl8hZm8VRvx8OWw1L0hPUJ392SKqYjN7p4JHjtxORQdDmQF/FVH8+Xgw9Bgpbns/OYWXFz/ZxNPy4tibAxtGLfKVDcf5ZGPp75i9ity1s672g3wIDAQAB')
 );
 
 D('nocontexthumans.com', REG_NONE, DnsProvider(deSEC),
