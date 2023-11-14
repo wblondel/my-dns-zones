@@ -4,8 +4,8 @@
 
 // Providers:
 
-var REG_NONE = NewRegistrar('none', 'NONE');
-var deSEC = NewDnsProvider('desec', 'DESEC');
+var REG_NONE = NewRegistrar('none');
+var deSEC = NewDnsProvider('desec');
 
 // "macro" for records that can be mixed into any zone
 
