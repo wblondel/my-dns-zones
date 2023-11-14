@@ -1,0 +1,8 @@
+D('nocontexthumans.com', REG_OVH, DnsProvider(DSP_DESEC),
+    CONTABO_WEB_SERVER_APEX,
+    USE_PIGEON_MAIL_SERVER,
+
+    CNAME('www', '@'),
+    TXT('@', 'google-site-verification=uI73RR9Zq9XnKrmb6a5UyPAa8Gu486RIlEnxfo9u4wc'),
+    TXT('dkim._domainkey', 'v=DKIM1;k=rsa;t=s;s=email;p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAs8vJ5LfGUt2fZ3MzoO5i2BP0WTeXFkuxbS6YlznFPUj7uQ/MC2k1UC8vB6n7BmUZM2cMYLvQs8Dk1LrsFThHx6bm7gb1RrhFv7qHFi3YNhDySEbJRDrvyGIYDjznsAkvfqUYwd7fOnDuDeX7KnZ9izJZFsfpceCnWLUGiY49WoADUFWJAyDTqMCHkAeO5QOW5HiiilS8FWhyd7EtkZ5WVEdpP9yPawf2a25nqcR7seHib5SGBcZ06nbN13DhuHHR7WAWDQjYw2rWvlTBK6EMDNZBYuhp7AgwN240KxtEzkzzNEf5eBqNt1bI87bBKF4LU6/+VHhk7qkmluL8HfByRwIDAQAB')
+);
