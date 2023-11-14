@@ -11,7 +11,6 @@ var CONTABO_WEB_SERVER_APEX = [
         ],
         issuewild: 'none',
     }),
-    //CAA('@', 'issue', 'letsencrypt.org'),
 
     SSHFP('@', 1, 1, 'fd45e0017294086203f789a1f76f08aabeedd905'),
     SSHFP('@', 1, 2, '748b03f80a8f0ac2de539b25700ca5490aa66b195b42c11116245275de9e4b34'),
