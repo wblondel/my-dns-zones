@@ -1,6 +1,5 @@
 var I_AM_PIGEON_MAIL_SERVER = [
-    A('pigeon', '193.168.147.152'),
-    AAAA('pigeon', '2a07:abc4::1:618'),
+    IncludeMailServerARecords('pigeon'),
 
     CNAME('autodiscover', 'pigeon'),
     CNAME('autoconfig', 'pigeon'),
@@ -28,8 +27,16 @@ var I_AM_PIGEON_MAIL_SERVER = [
     TLSA('_143._tcp.pigeon', 3, 1, 1, '74a1fbad23b52e8188b4fdefa6dc677877250f14d8552cc7cde0d8eb146c2801'),
     TLSA('_110._tcp.pigeon', 3, 1, 1, '74a1fbad23b52e8188b4fdefa6dc677877250f14d8552cc7cde0d8eb146c2801'),
 
-    TXT('@', 'v=spf1 mx -all'),
-    TXT('dkim._domainkey', 'v=DKIM1; k=rsa; t=s; s=email; p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzT5Lk7vu33GtlbexF1lYjvLfTaJ2vmtFFgaz0e07W3RzYXz/MRZ3OZUmOuxxipuyu/wJRkJdYZ7KfjBvBLGC1D1VxLM5woDwalvFQYxperCw+9lA4mgNh2gA5CQkwSzAfZXRv+GSzurp/XmYQSbO+mtK71VK2Rz5R9wDjK73wIoHA2ZW/dAnf5uWfj/Me6Uf5GU1J2kjjr5iYhjYAQ/iMF23zUvrt3R1s8sE8TUbwe3eaw7V04hwMpIqngvTHEv+Jkzv+Zu9umylVBjWKIeLbvV1qGZtiznlWChhFFj3jPBcaAOHGrwutWzVMLSQKPseCkjBtd/igQTW7K4HTXJoKwIDAQAB'),
+    SPF_BUILDER({
+        label: '@',
+        parts: [
+            'v=spf1',
+            'mx',
+            '-all'
+        ],
+    }),
+
+    IncludeDkimDomainKey('williamblondel.fr'),
     
     DMARC_BUILDER({
         policy: 'reject',
@@ -61,12 +68,5 @@ var I_AM_PIGEON_MAIL_SERVER = [
 
     TXT('_token._dnswl', 'vpazhfyv3wzniifjf1f3bg579hy9x3ws'),
 
-    SSHFP('pigeon', 1, 1, 'dd7c94a57191f31a0ba6fbac80fd5fbb24193e05'),
-    SSHFP('pigeon', 1, 2, '84c1eba3537839e7c62e94294a6051106cab83f28fe53b30d437be749d7df5e8'),
-    SSHFP('pigeon', 2, 1, '3972861c0cb1e2767343971d30ba74eae238e715'),
-    SSHFP('pigeon', 2, 2, '55355fc036de3c14a618dbb569ab10801905121fa2d5b1c223fea10fceb14599'),
-    SSHFP('pigeon', 3, 1, '89deeb4af3d7ad64df35ffa2291eae68a80766a1'),
-    SSHFP('pigeon', 3, 2, 'e6c012db7d44f94a5a09dced22dac4fe45cfa10b4dfce666daea212f5dbbbc38'),
-    SSHFP('pigeon', 4, 1, '56362c792465195f7e3d62eeee19b669de085ac0'),
-    SSHFP('pigeon', 4, 2, '3410da58588af3d36aa17044f99c5c804b7d42a311a70906de71ecaa0022f1a2')
+    IncludeMailServerSshfpRecords('pigeon'),
 ];
