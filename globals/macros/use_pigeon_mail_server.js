@@ -10,5 +10,12 @@ var USE_PIGEON_MAIL_SERVER = [
 
     SRV('_autodiscover._tcp', 0, 1, 443, 'pigeon.williamblondel.fr.'),
 
-    TXT('@', 'v=spf1 mx -all')
+    SPF_BUILDER({
+        label: '@',
+        parts: [
+            'v=spf1',
+            'mx',
+            '-all'
+        ],
+    }),
 ];
