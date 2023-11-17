@@ -14,6 +14,7 @@ var USE_PIGEON_MAIL_SERVER = [
         label: '@',
         parts: [
             'v=spf1',
+            'a',
             'mx',
             '-all'
         ],
