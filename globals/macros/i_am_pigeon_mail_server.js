@@ -36,8 +36,6 @@ var I_AM_PIGEON_MAIL_SERVER = [
             '-all'
         ],
     }),
-
-    IncludeDkimDomainKey('williamblondel.fr'),
     
     DMARC_BUILDER({
         policy: 'reject',
