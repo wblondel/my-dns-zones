@@ -54,13 +54,17 @@ var I_AM_PIGEON_MAIL_SERVER = [
     TXT('_mta-sts', 'v=STSv1; id=202110111304'),
     TXT('_smtp._tls', 'v=TLSRPTv1; rua=mailto:tls-reports@williamblondel.fr'),
 
-    /* Wildcard record is cleaner but bad actors may try to exploit it. */
+    /*
+     * Wildcard record is cleaner but bad actors may try to exploit it.
+     * https://mxtoolbox.com/problem/dmarc/dmarc-external-validation
+     */
     TXT('parisb.rest._report._dmarc', 'v=DMARC1'),
     TXT('nocontexthumans.com._report._dmarc', 'v=DMARC1'),
     TXT('humansnocontext.com._report._dmarc', 'v=DMARC1'),
     TXT('williamgeraldblondel.com._report._dmarc', 'v=DMARC1'),
     TXT('williamblondel.me._report._dmarc', 'v=DMARC1'),
     TXT('williamblondel.com._report._dmarc', 'v=DMARC1'),
+    TXT('einstein.williamblondel.fr._report._dmarc', 'v=DMARC1'),
 
     TXT('_carddavs._tcp', 'path=/SOGo/dav/'),
     TXT('_caldavs._tcp', 'path=/SOGo/dav/'),

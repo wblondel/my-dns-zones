@@ -19,5 +19,13 @@ function IncludeDkimDomainKey(domain) {
         'williamgeraldblondel.com': 'p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA6nkxbCRXW5aigVBTS5u7/xdZ8a2gKMuCj/C5LIQKWhKuv0sEHjnj8oqQeyxxsJrmBv/2tUyY9DnZoZcMfN7fh7GnVbg0BMaIurXnUXkxfeDUCtklnW390gLGHVzdZnJVoYi6XQ6KwRCqvmANAgFltv76+m8ANxoo5N660URWzSJsqw7jSiHUzYhFZXienU94ePNH1SSrRXJSdksGuvp4j14gNoHGdWcn4g2KGayNxuAyj1Vxuxq+i5DYaoX+UXpUz//vgebk2aoITAL5Ugp9LNbvRftQFeAMMAwvn2yKw9aUBtzPMlARmboc440M+/hCk2DQOqMisKuIDIhtFrj4EQIDAQAB'
     }
 
-    return TXT('dkim._domainkey', common.concat(keys[domain]).join(''))
+    var txtSelector = 'dkim._domainkey';
+
+    var parts = domain.split('.');
+
+    if (parts.length > 2) {
+        txtSelector += '.' + parts.slice(0, -2).join('.');
+    }
+
+    return TXT(txtSelector, common.concat(keys[domain]).join(''))
 }
