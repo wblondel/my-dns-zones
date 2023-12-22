@@ -1,4 +1,5 @@
-D('williamblondel.me', REG_OVH, DnsProvider(DSP_DESEC),
+// TODO: develop provider for https://www.spaceship.com
+D('williamblondel.me', REG_NONE, DnsProvider(DSP_DESEC),
     WEB_SERVER_APEX,
     UsePigeonMailServerFor('@'),
 
