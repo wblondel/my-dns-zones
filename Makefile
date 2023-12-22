@@ -1,7 +1,7 @@
 .DEFAULT_GOAL = help
 SHELL = /usr/bin/env bash
 
-DNSCONTROL_DOCKER_IMAGE = ghcr.io/stackexchange/dnscontrol
+DNSCONTROL_DOCKER_IMAGE = ghcr.io/stackexchange/dnscontrol:latest
 DNSCONTROL_VOLUME = "$$(pwd):/dns"
 
 .PHONY: version # Get the version of DNSControl
