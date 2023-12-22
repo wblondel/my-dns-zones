@@ -4,6 +4,10 @@ SHELL = /usr/bin/env bash
 DNSCONTROL_DOCKER_IMAGE = ghcr.io/stackexchange/dnscontrol
 DNSCONTROL_VOLUME = "$$(pwd):/dns"
 
+.PHONY: version # Get the version of DNSControl
+version:
+	@docker run --rm -it -v $(DNSCONTROL_VOLUME) $(DNSCONTROL_DOCKER_IMAGE) version
+
 .PHONY: check # Check and validate dnsconfig.js
 check:
 	@docker run --rm -it -v $(DNSCONTROL_VOLUME) $(DNSCONTROL_DOCKER_IMAGE) check
