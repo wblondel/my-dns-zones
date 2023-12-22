@@ -1,13 +1,13 @@
 /**
  * @param {string} domain 
  */
-function IncludeDkimDomainKey(domain) {
+function IncludeDkimDomainKey(domain, v, k, t, s, spacesSeparator) {
     var common = [
-        'v=DKIM1;',
-        'k=rsa;',
-        't=s;',
-        's=email;',
-    ];
+        v ? 'v='+v+';' : null,
+        k ? 'k='+k+';' : null,
+        t ? 't='+t+';' : null,
+        s ? 's='+s+';' : null
+    ].filter(Boolean);
 
     var keys = {
         'einstein.williamblondel.fr': 'p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwKTmgakjeH7YCypafRPuKGMy4i5fftnA+0EJ2bqhh1kDLRQzke7y213ijxKGdAlmxpcvIumgR8ypbZ3Ez4ETP5B1SGMXcpfx8DYqWbKG0G7aHNg6TvMfB9SI+pcsHL3QDZbp9oX9EoXCg4peroi+xdvgDgaUE0lyR8p62fdZcIfnI74ECHo1mfR9Kj50ImizZVe0YwZTvcuasPtAZS+necld+rCGCFYEtFiWVogjmG86MwuYEamIbKaFE/ksuh5hWQlZk64yLRMSqTejk+YD9gARDirDughhPoPqXZSF3OBd5HqtjuuCsunYyCehZuZ1WgBh22STJmTDysCiGfH7ewIDAQAB',
@@ -28,5 +28,5 @@ function IncludeDkimDomainKey(domain) {
         txtSelector += '.' + parts.slice(0, -2).join('.');
     }
 
-    return TXT(txtSelector, common.concat(keys[domain]).join(''))
+    return TXT(txtSelector, common.concat(keys[domain]).join(spacesSeparator ? ' ' : ''));
 }

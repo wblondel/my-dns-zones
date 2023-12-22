@@ -6,5 +6,5 @@ D('nocontexthumans.com', REG_NONE, DnsProvider(DSP_DESEC),
     CNAME('www', '@'),
     
     IncludeGoogleSiteVerification('nocontexthumans.com'),
-    IncludeDkimDomainKey('nocontexthumans.com')
+    IncludeDkimDomainKey('nocontexthumans.com', 'DKIM1', 'rsa', 's', 'email', false)
 );
