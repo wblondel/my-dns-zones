@@ -13,6 +13,6 @@ D('williamblondel.fr', REG_OVH, DnsProvider(DSP_DESEC),
     IncludeGoogleSiteVerification('williamblondel.fr'),
     IncludeKeybaseSiteVerification('williamblondel.fr'),
     IncludeMicrosoftSiteVerification('williamblondel.fr'),
-    IncludeDkimDomainKey('williamblondel.fr'),
-    IncludeDkimDomainKey('einstein.williamblondel.fr')
+    IncludeDkimDomainKey('williamblondel.fr', 'DKIM1', 'rsa', 's', 'email', false),
+    IncludeDkimDomainKey('einstein.williamblondel.fr', 'DKIM1', 'rsa', 's', 'email', false)
 );

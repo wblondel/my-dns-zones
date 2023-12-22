@@ -6,5 +6,5 @@ D('williamgeraldblondel.com', REG_NONE, DnsProvider(DSP_DESEC),
     CNAME('www', '@'),
 
     IncludeGoogleSiteVerification('williamgeraldblondel.com'),
-    IncludeDkimDomainKey('williamgeraldblondel.com')
+    IncludeDkimDomainKey('williamgeraldblondel.com', 'DKIM1', 'rsa', 's', 'email', false)
 );
