@@ -19,5 +19,8 @@ D('parisb.rest', REG_NONE, DnsProvider(DSP_DESEC),
     }),
     
     IncludeGoogleSiteVerification('parisb.rest'),
-    IncludeDkimDomainKey('parisb.rest')
+    IncludeDkimDomainKey('parisb.rest'),
+
+    UseMailgunMxFor('mg'),
+    IncludeDkimDomainKey('mg.parisb.rest')
 );
