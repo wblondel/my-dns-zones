@@ -5,7 +5,10 @@ D('williamblondel.fr', REG_OVH, DnsProvider(DSP_DESEC),
     UsePigeonMailServerFor('einstein'),
     
     CNAME('www', '@'),
-    CNAME('actes', 'einstein'),
+
+    // Fly.io IPs
+    A('actes', '66.241.125.129'), // shared
+    AAAA('actes', '2a09:8280:1::15:da5e'), // dedicated
 
     MX('@', 10, 'pigeon.williamblondel.fr.'),
 

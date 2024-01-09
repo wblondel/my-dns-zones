@@ -1,9 +1,9 @@
 // TODO: develop provider for https://www.sav.com/
 D('parisb.rest', REG_NONE, DnsProvider(DSP_DESEC),
-    //WEB_SERVER_APEX,
-
-    A('@', '66.241.125.221'),
-    AAAA('@', '2a09:8280:1::f:c9e1'),
+    // Fly.io IPs
+    A('@', '66.241.125.221'), // shared
+    AAAA('@', '2a09:8280:1::f:c9e1'), // dedicated
+    
     UsePigeonMailServerFor('@'),
 
     CNAME('www', '@'),
