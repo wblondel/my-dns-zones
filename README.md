@@ -1,8 +1,8 @@
 # My DNS zones
 ![Banner](./docs/imgs/dns-1200x600.jpg)
 
-[![en](https://img.shields.io/badge/lang-en-red.svg)](https://github.com/wblondel/my-dns-zones/blob/master/README.md)
-[![fr](https://img.shields.io/badge/lang-fr-blue.svg)](https://github.com/wblondel/my-dns-zones/blob/master/docs/i18n/fr/README.md)
+[![en](https://img.shields.io/badge/lang-en-red.svg)](./README.md)
+[![fr](https://img.shields.io/badge/lang-fr-blue.svg)](./docs/i18n/fr/README.md)
 
 
 This repository holds a reproducible configuration of the DNS zone for each domain I have.
