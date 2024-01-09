@@ -81,4 +81,4 @@ Secrets are defined as environment's secrets on GitHub, and are used in the `cre
 
 ## TODO
 - [ ] Develop a service provider for [Spaceship](https://www.spaceship.com) &nbsp; [![X (formerly Twitter)](https://img.shields.io/twitter/follow/spaceship?label=%40spaceship&link=https%3A%2F%2Ftwitter.com%2Fspaceship)](https://twitter.com/spaceship) 
-- [ ] Developer a service provider for [Sav](https://www.sav.com) &nbsp; [![X (formerly Twitter)](https://img.shields.io/twitter/follow/usesav?label=%40usesav&link=https%3A%2F%2Ftwitter.com%2Fusesav)](https://twitter.com/usesav)
+- [ ] Develop a service provider for [Sav](https://www.sav.com) &nbsp; [![X (formerly Twitter)](https://img.shields.io/twitter/follow/usesav?label=%40usesav&link=https%3A%2F%2Ftwitter.com%2Fusesav)](https://twitter.com/usesav)
