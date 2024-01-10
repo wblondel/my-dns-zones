@@ -1,5 +1,5 @@
 # Mes zones DNS
-![Banner](../../imgs/dns-1200x600.jpg)
+![Banner](https://newblog.siteground.com/en/wp-content/uploads/sites/2/2021/07/DNS_blog-post-1200x600-1.jpg)
 
 [![en](https://img.shields.io/badge/lang-en-red.svg)](../../../README.md)
 [![fr](https://img.shields.io/badge/lang-fr-blue.svg)](./README.md)
@@ -82,3 +82,7 @@ Les *secrets* sont définis comme *secrets* d'environnement sur GitHub et sont u
 ## TODO
 - [ ] Développer un fournisseur de service pour [Spaceship](https://www.spaceship.com) &nbsp; [![X (formerly Twitter)](https://img.shields.io/twitter/follow/spaceship?label=%40spaceship&link=https%3A%2F%2Ftwitter.com%2Fspaceship)](https://twitter.com/spaceship) 
 - [ ] Développer un fournisseur de service pour [Sav](https://www.sav.com) &nbsp; [![X (formerly Twitter)](https://img.shields.io/twitter/follow/usesav?label=%40usesav&link=https%3A%2F%2Ftwitter.com%2Fusesav)](https://twitter.com/usesav)
+
+---
+
+Bannière fournie par : https://siteground.com/ (merci à eux!)
