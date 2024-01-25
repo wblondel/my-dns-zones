@@ -1,10 +1,9 @@
 D('williamblondel.fr', REG_OVH, DnsProvider(DSP_DESEC),
-    WEB_SERVER_APEX,
+    UseHashnodeFor('@', true),
+    
     WEB_SERVER_SUBDOMAIN,
     I_AM_PIGEON_MAIL_SERVER,
     UsePigeonMailServerFor('einstein'),
-    
-    CNAME('www', '@'),
 
     // Fly.io IPs
     A('actes', '66.241.125.129'), // shared
