@@ -7,9 +7,6 @@ D('williamblondel.fr', REG_OVH, DnsProvider(DSP_DESEC),
     A('actes', '66.241.125.129'), // shared
     AAAA('actes', '2a09:8280:1::15:da5e'), // dedicated
 
-    // Lab server
-    LAB_SERVER_SUBDOMAIN,
-
     // Configure emails
     I_AM_PIGEON_MAIL_SERVER,
     MX('@', 10, 'pigeon.williamblondel.fr.'),
