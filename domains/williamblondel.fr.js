@@ -10,7 +10,7 @@ D('williamblondel.fr', REG_OVH, DnsProvider(DSP_DESEC),
     // Lab server
     LAB_SERVER_SUBDOMAIN,
 
-    // Cnfigure emails
+    // Configure emails
     I_AM_PIGEON_MAIL_SERVER,
     MX('@', 10, 'pigeon.williamblondel.fr.'),
     IncludeDkimDomainKey('williamblondel.fr', 'DKIM1', 'rsa', 's', 'email', false),
