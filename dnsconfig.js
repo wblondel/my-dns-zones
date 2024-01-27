@@ -1,3 +1,6 @@
+// @ts-check
+/// <reference path="types-dnscontrol.d.ts" />
+
 /*
    dnsconfig.js: dnscontrol configuration file.
 */

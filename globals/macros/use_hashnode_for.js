@@ -1,6 +1,6 @@
 /**
  * Create records to map a domain to Hashnode.
- * The function supports sub-domains.
+ * The function supports subdomains.
  * 
  * @param {string} host 
  * @param {boolean} withWww

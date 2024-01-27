@@ -64,7 +64,6 @@ var I_AM_PIGEON_MAIL_SERVER = [
     TXT('williamgeraldblondel.com._report._dmarc', 'v=DMARC1'),
     TXT('williamblondel.me._report._dmarc', 'v=DMARC1'),
     TXT('williamblondel.com._report._dmarc', 'v=DMARC1'),
-    TXT('einstein.williamblondel.fr._report._dmarc', 'v=DMARC1'),
 
     TXT('_carddavs._tcp', 'path=/SOGo/dav/'),
     TXT('_caldavs._tcp', 'path=/SOGo/dav/'),
