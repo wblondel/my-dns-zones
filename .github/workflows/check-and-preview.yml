@@ -7,7 +7,7 @@ jobs:
     if: github.actor!= 'dependabot[bot]'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: DNSControl check
         uses: wblondel/dnscontrol-action@v4.8.1
@@ -26,7 +26,7 @@ jobs:
     needs: check
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: DNSControl preview
         uses: wblondel/dnscontrol-action@v4.8.1
