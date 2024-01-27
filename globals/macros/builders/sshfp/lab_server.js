@@ -1,7 +1,7 @@
 /**
  * @param {string} name 
  */
-function IncludeWebServerSshfpRecords(name) {
+function IncludeLabServerSshfpRecords(name) {
     return [
         SSHFP(name, 1, 1, 'c199c31d6dda601b550ce21684c22c2eb5e73906'),
         SSHFP(name, 1, 2, 'f3c1c352e512b2ebc51004102ac960aca4ddd62e54d97d6b73d83164b0640517'),

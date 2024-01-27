@@ -1,6 +1,6 @@
-var WEB_SERVER_APEX = [
-    IncludeWebServerARecords('@'),
-    IncludeWebServerSshfpRecords('@'),
+var LAB_SERVER_APEX = [
+    IncludeLabServerARecords('@'),
+    IncludeLabServerSshfpRecords('@'),
 
     CAA_BUILDER({
         label: '@',
