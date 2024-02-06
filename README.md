@@ -23,6 +23,11 @@ The steps to obtain the credentials for each provider are listed on the relevant
 
 For more information about the credentials file, please visit [this page](https://docs.dnscontrol.org/commands/creds-json).
 
+Then, create a `.env` file with the location of the local credentials file:
+```
+DNSCONTROL_LOCAL_CREDS=creds.local.json
+```
+
 ## Usage
 
 Docker is required as `dnscontrol` is used through Docker.
@@ -45,28 +50,24 @@ This command allows you to check and validate the syntax of the DNS zones' confi
 
 ### Verify service providers' credentials
 ```sh
-DNSCONTROL_LOCAL_CREDS=path_to_creds_file CRED_KEY=cred_name make check-creds
+CRED_KEY=cred_name make check-creds
 ```
 
 This command performs a small operation to verify a service provider's credentials.
-
-The environment variable `DNSCONTROL_LOCAL_CREDS` must be defined and must contain the path to the local credentials file (`creds.local.json`).
 
 The environment variable `CRED_KEY` must be defined and must contain the name of the credential you want to test, as defined in the local credentials file (`creds.local.json`).
 
 Example:
 ```sh
-DNSCONTROL_LOCAL_CREDS=creds.local.json CRED_KEY=ovh make check-creds
+CRED_KEY=ovh make check-creds
 ```
 
 ### Preview the change to make
 ```sh
-DNSCONTROL_LOCAL_CREDS=path_to_creds_file make preview
+make preview
 ```
 
 This command reads the configuration and shows the changes that need to be made, without applying them.
-
-The environment variable `DNSCONTROL_LOCAL_CREDS` must be defined and must contain the path to the local credentials file (`creds.local.json`).
 
 ### Apply the changes
 As a precautionary measure, it is not possible to apply the changes manually. You should first create a PR and then merge it to `master`.
