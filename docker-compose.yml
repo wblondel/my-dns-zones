@@ -1,0 +1,6 @@
+version: '3'
+services:
+  dnscontrol:
+    image: ghcr.io/stackexchange/dnscontrol:4.8.1
+    volumes:
+      - ".:/dns"
