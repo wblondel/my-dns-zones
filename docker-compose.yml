@@ -1,6 +1,8 @@
 version: '3'
 services:
   dnscontrol:
-    image: ghcr.io/stackexchange/dnscontrol:4.8.1
+    build:
+      context: ./docker
+      dockerfile: dnscontrol.Dockerfile
     volumes:
       - ".:/dns"
