@@ -4,30 +4,34 @@ SHELL = /usr/bin/env bash
 include .env
 export
 
+.PHONY: build
+build:
+	@docker compose build --quiet
+
 .PHONY: version # Get the version of DNSControl
-version:
-	@docker compose run dnscontrol version
+version: build
+	@docker compose run --rm dnscontrol version
 
 .PHONY: check # Check and validate dnsconfig.js
-check:
-	@docker compose run dnscontrol check
+check: build
+	@docker compose run --rm dnscontrol check
 
 .PHONY: check-creds # Do a small operation to verify credentials
-check-creds:
+check-creds: build
 ifndef DNSCONTROL_LOCAL_CREDS
 	$(error DNSCONTROL_LOCAL_CREDS is undefined)
 endif
 ifndef CRED_KEY
 	$(error CRED_KEY is undefined)
 endif
-	@docker compose run dnscontrol check-creds --creds $(DNSCONTROL_LOCAL_CREDS) $(CRED_KEY)
+	@docker compose run --rm dnscontrol check-creds --creds $(DNSCONTROL_LOCAL_CREDS) $(CRED_KEY)
 
 .PHONY: preview # Read live configuration and identify changes to be made, without applying them
-preview:
+preview: build
 ifndef DNSCONTROL_LOCAL_CREDS
 	$(error DNSCONTROL_LOCAL_CREDS is undefined)
 endif
-	@docker compose run dnscontrol preview --creds $(DNSCONTROL_LOCAL_CREDS)
+	@docker compose run --rm dnscontrol preview --creds $(DNSCONTROL_LOCAL_CREDS)
 
 .PHONY: help # List available commands
 help:
