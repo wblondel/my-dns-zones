@@ -7,7 +7,7 @@ jobs:
     if: github.actor!= 'dependabot[bot]'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.1.1
 
       - name: DNSControl check
         uses: wblondel/dnscontrol-action@v4.8.2
@@ -17,7 +17,6 @@ jobs:
   preview:
     if: github.actor!= 'dependabot[bot]'
     runs-on: ubuntu-latest
-    environment: production
     env:
       DESEC_API_TOKEN: ${{ secrets.DESEC_API_TOKEN }}
       OVH_APP_KEY: ${{ secrets.OVH_APP_KEY }}
@@ -26,7 +25,7 @@ jobs:
     needs: check
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.1.1
 
       - name: DNSControl preview
         uses: wblondel/dnscontrol-action@v4.8.2
