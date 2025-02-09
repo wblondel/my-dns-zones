@@ -19,6 +19,6 @@ jobs:
       - uses: actions/checkout@v4.1.6
 
       - name: DNSControl push
-        uses: wblondel/dnscontrol-action@v4.12.1
+        uses: wblondel/dnscontrol-action@v4.16.0
         with:
           args: push
