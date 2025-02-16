@@ -43,9 +43,11 @@ var I_AM_PIGEON_MAIL_SERVER = [
         alignmentSPF: 's',
         alignmentDKIM: 's',
         rua: [
+            'mailto:26e6fd52@in.mailhardener.com',
             'mailto:dmarc-rua@williamblondel.fr'
         ],
         ruf: [
+            'mailto:26e6fd52@in.mailhardener.com',
             'mailto:dmarc-ruf@williamblondel.fr'
         ],
         failureOptions: '1'
