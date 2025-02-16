@@ -16,9 +16,9 @@ jobs:
       OVH_CONSUMER_KEY: ${{ secrets.OVH_CONSUMER_KEY }}
 
     steps:
-      - uses: actions/checkout@v4.2.2
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: DNSControl push
-        uses: wblondel/dnscontrol-action@v4.16.0
+        uses: wblondel/dnscontrol-action@6776e00ee8a818ada3ddda972ec95d6d6e26deac # v4.16.0
         with:
           args: push
