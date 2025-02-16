@@ -33,7 +33,8 @@ var I_AM_PIGEON_MAIL_SERVER = [
             'v=spf1',
             'a',
             'mx',
-            '-all'
+            // See https://www.mailhardener.com/blog/why-mailhardener-recommends-spf-softfail-over-fail
+            '~all'
         ],
     }),
     
