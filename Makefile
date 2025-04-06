@@ -33,6 +33,10 @@ ifndef DNSCONTROL_LOCAL_CREDS
 endif
 	@docker compose run --rm dnscontrol preview --creds $(DNSCONTROL_LOCAL_CREDS)
 
+.PHONY: write-types
+write-types:
+	@docker compose run --rm dnscontrol write-types
+
 .PHONY: help # List available commands
 help:
 	@echo "Available commands:"
