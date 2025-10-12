@@ -1,1 +1,1 @@
-FROM ghcr.io/stackexchange/dnscontrol:4.16.0
+FROM ghcr.io/stackexchange/dnscontrol:4.25.0
