@@ -10,7 +10,7 @@ jobs:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
       - name: DNSControl check
-        uses: wblondel/dnscontrol-action@806edd71548719332a2165596b4114f353912945 # v4.25.0
+        uses: wblondel/dnscontrol-action@1e2bf5dd6cf5ed180f6b5b5de10bde5b8fc4d5e1 # v4.26.0
         with:
           args: check
 
@@ -28,7 +28,7 @@ jobs:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
       - name: DNSControl preview
-        uses: wblondel/dnscontrol-action@806edd71548719332a2165596b4114f353912945 # v4.25.0
+        uses: wblondel/dnscontrol-action@1e2bf5dd6cf5ed180f6b5b5de10bde5b8fc4d5e1 # v4.26.0
         id: dnscontrol_preview
         with:
           args: preview
