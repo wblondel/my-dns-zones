@@ -35,14 +35,3 @@ jobs:
         id: dnscontrol_preview
         with:
           args: preview
-
-      - name: Comment diff on PR
-        uses: unsplash/comment-on-pr@ffe8f97ccc63ce12c3c23c6885b169db67958d3b # v1.3.0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          msg: |
-            ```
-            ${{ steps.dnscontrol_preview.outputs.preview_comment }}
-            ```
-          check_for_duplicate_msg: false
