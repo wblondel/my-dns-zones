@@ -18,7 +18,10 @@ jobs:
     if: github.actor!= 'dependabot[bot]'
     runs-on: ubuntu-latest
     env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       DESEC_API_TOKEN: ${{ secrets.DESEC_API_TOKEN }}
+      DYNADOT_API_KEY: ${{ secrets.DYNADOT_API_KEY }}
       OVH_APP_KEY: ${{ secrets.OVH_APP_KEY }}
       OVH_APP_SECRET_KEY: ${{ secrets.OVH_APP_SECRET_KEY }}
       OVH_CONSUMER_KEY: ${{ secrets.OVH_CONSUMER_KEY }}
