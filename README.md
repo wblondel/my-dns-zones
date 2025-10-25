@@ -16,8 +16,10 @@ All changes on DNS records are done via this repository.
 Clone the repository and create a `creds.local.json` at the root.
 
 Then, configure the credentials for:
-- [OVH](https://docs.dnscontrol.org/service-providers/providers/ovh)
+- [Cloudflare](https://docs.dnscontrol.org/provider/cloudflareapi)
 - [deSEC](https://docs.dnscontrol.org/service-providers/providers/desec)
+- [Dynadot](https://docs.dnscontrol.org/provider/dynadot)
+- [OVH](https://docs.dnscontrol.org/service-providers/providers/ovh)
 
 The steps to obtain the credentials for each provider are listed on the relevant documentation pages.
 
@@ -79,10 +81,6 @@ The `master` branch is protected, it only accepts merges from PRs.
 You must first create a branch, then make your changes there and create a PR.
 
 Secrets are defined as environment's secrets on GitHub, and are used in the `creds.json` file.
-
-## TODO
-- [ ] Develop a service provider for [Spaceship](https://www.spaceship.com) &nbsp; [![X (formerly Twitter)](https://img.shields.io/twitter/follow/spaceship?label=%40spaceship&link=https%3A%2F%2Ftwitter.com%2Fspaceship)](https://twitter.com/spaceship) 
-- [ ] Develop a service provider for [Sav](https://www.sav.com) &nbsp; [![X (formerly Twitter)](https://img.shields.io/twitter/follow/usesav?label=%40usesav&link=https%3A%2F%2Ftwitter.com%2Fusesav)](https://twitter.com/usesav)
 
 ---
 
