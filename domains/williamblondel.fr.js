@@ -1,4 +1,7 @@
-D('williamblondel.fr', REG_OVH, DnsProvider(DSP_DESEC),
+D('williamblondel.fr', REG_DYNADOT,
+    // DNS Zone locations
+    DnsProvider(DSP_DESEC, 2),
+
     // HTTP: Hashnode blog
     UseHashnodeFor('@', true),
 

@@ -1,13 +1,22 @@
 {
+  "cloudflare": {
+    "TYPE": "CLOUDFLAREAPI",
+    "accountid": "$CLOUDFLARE_ACCOUNT_ID",
+    "apitoken": "$CLOUDFLARE_API_TOKEN"
+  },
+  "desec": {
+    "TYPE": "DESEC",
+    "auth-token": "$DESEC_API_TOKEN"
+  },
+  "dynadot": {
+    "TYPE": "DYNADOT",
+    "key": "$DYNADOT_API_KEY"
+  },
   "ovh": {
     "TYPE": "OVH",
     "app-key": "$OVH_APP_KEY",
     "app-secret-key": "$OVH_APP_SECRET_KEY",
     "consumer-key": "$OVH_CONSUMER_KEY"
-  },
-  "desec": {
-    "TYPE": "DESEC",
-    "auth-token": "$DESEC_API_TOKEN"
   },
   "none": {
     "TYPE": "NONE"

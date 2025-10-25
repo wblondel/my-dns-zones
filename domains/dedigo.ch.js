@@ -1,4 +1,7 @@
-D('dedigo.ch', REG_NONE, DnsProvider(DSP_DESEC),
+D('dedigo.ch', REG_DYNADOT,
+    // DNS Zone locations
+    DnsProvider(DSP_DESEC, 2),
+    
     // Configure emails
     UsePigeonMailServerFor('@'),
     IncludeDkimDomainKey('dedigo.ch', 'DKIM1', 'rsa', 's', 'email', false),

@@ -1,5 +1,7 @@
-// TODO: develop provider for registrar https://www.spaceship.com
-D('williamgeraldblondel.com', REG_NONE, DnsProvider(DSP_DESEC),
+D('williamgeraldblondel.com', REG_DYNADOT,
+    // DNS Zone locations
+    DnsProvider(DSP_DESEC, 2),
+
     // HTTP: Fly.io IPs
     A('@', '66.241.124.243'), // shared
     AAAA('@', '2a09:8280:1::4e:f3c1'), // dedicated
