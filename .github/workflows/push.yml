@@ -21,6 +21,6 @@ jobs:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
       - name: DNSControl push
-        uses: wblondel/dnscontrol-action@1e2bf5dd6cf5ed180f6b5b5de10bde5b8fc4d5e1 # v4.26.0
+        uses: wblondel/dnscontrol-action@648bf97e38aed855b8f43af0cc8428f1dee90a62 # v4.27.1
         with:
           args: push
