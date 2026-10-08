@@ -38,6 +38,14 @@ jobs:
         if: steps.health.outcome == 'failure'
         run: exit 1
 
+      # Tells the heartbeat monitor that the run happened, whatever the result of the checks: the
+      # failed run notification is for the checks, the monitor is for a schedule that stopped.
+      - name: Ping the heartbeat monitor
+        if: ${{ !cancelled() && github.ref == 'refs/heads/master' }}
+        env:
+          HEARTBEAT_URL: ${{ secrets.HEARTBEAT_DOMAIN_HEALTH_URL }}
+        run: bash scripts/heartbeat.sh
+
   deploy:
     needs: check
     # Also after a failed check, to show it on the page. Only from master: never from a branch.

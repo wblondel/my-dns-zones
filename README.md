@@ -116,6 +116,20 @@ When it fails, the run summary lists the records that differ, for each domain ([
 
 The workflow uses the same secrets as the *Push DNS changes* one. The runs of this repository are public, so the report hides the `HOME_IP` secret if it ever shows up in a record.
 
+## Heartbeat
+
+The two scheduled workflows (*Domain health* and *DNS drift*) can ping a heartbeat monitor, such as [Healthchecks.io](https://healthchecks.io), each time they run. The monitor alerts you when the pings stop, which is how you find out that a schedule quietly stopped. Nothing else would tell, and the status page only shows it if you open it. GitHub disables the scheduled workflows of a public repository after 60 days without activity, for example.
+
+[`scripts/heartbeat.sh`](scripts/heartbeat.sh) sends the ping at the end of every scheduled or manual run on `master`, whatever the result of the checks: a failing check fails the run and GitHub notifies you, the ping only says that the workflow ran. Pull request runs never ping.
+
+To set it up, create one check per workflow in the monitor, with a period of 1 day and a grace time of a few hours (6, for example), and choose where it alerts you. Then save their ping URLs as secrets of this repository:
+```sh
+gh secret set HEARTBEAT_DOMAIN_HEALTH_URL   # Domain health, runs at 06:17 UTC
+gh secret set HEARTBEAT_DNS_DRIFT_URL       # DNS drift, runs at 03:41 UTC
+```
+
+`gh secret set` asks for the value, so it does not end up in your shell history. A ping URL lets anybody send pings for its check, so keep it secret. Until a secret is set, the run only shows a notice. A monitor that is down does not fail the run either, the ping just shows a warning.
+
 ## Make changes
 
 The `master` branch is protected, it only accepts merges from PRs.
