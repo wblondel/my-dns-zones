@@ -12,6 +12,13 @@ jobs:
   check:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # One run at a time, so that two runs cannot open the same issue twice.
+    concurrency:
+      group: domain-health
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      issues: write
     env:
       WARN_DAYS: 60
       FAIL_DAYS: 21
@@ -33,13 +40,23 @@ jobs:
         with:
           path: site
 
-      # Fail the run (and so notify) once the page has been uploaded.
+      # On master, a failing domain is reported as an issue, opened when it starts failing and closed
+      # once it is fixed, instead of a failed run notification every day. The run then stays green:
+      # it only fails if the issues cannot be updated, or if the check did not run.
+      - name: Open and close the issues
+        if: ${{ !cancelled() && github.ref == 'refs/heads/master' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STEP_OUTCOME: ${{ steps.health.outcome }}
+        run: bash scripts/sync-issues.sh domain-health site/status.json
+
+      # Anywhere else, a failed check fails the run, once the page has been uploaded.
       - name: Fail if a check failed
-        if: steps.health.outcome == 'failure'
+        if: steps.health.outcome == 'failure' && github.ref != 'refs/heads/master'
         run: exit 1
 
       # Tells the heartbeat monitor that the run happened, whatever the result of the checks: the
-      # failed run notification is for the checks, the monitor is for a schedule that stopped.
+      # issues are for the checks, the monitor is for a schedule that stopped.
       - name: Ping the heartbeat monitor
         if: ${{ !cancelled() && github.ref == 'refs/heads/master' }}
         env:

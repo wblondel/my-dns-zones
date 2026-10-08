@@ -83,7 +83,7 @@ The [Domain health](.github/workflows/domain-health.yml) workflow runs [`scripts
 - the domain does not expire soon, according to the registry's RDAP server (dates are in UTC). It raises a warning under 60 days and fails under 21 days, so a failure means a renewal is urgent;
 - the registry's RDAP data is sound. The domain should have a registrar transfer lock (a warning if it has not). Its nameservers must belong to the DNS provider declared in its file with `DnsProvider(DSP_...)`: when you add a provider in `globals/providers.js`, add its nameservers to `provider_nameservers` in the script, otherwise the check only warns. A domain marked `// DNSSEC: on` must also have a DS record at the registry.
 
-The workflow fails, and GitHub sends its usual failed workflow notification, when a check fails. Warnings are shown on the status page and in the run, but do not fail it.
+On `master`, a failing domain opens an issue (see [Issues](#issues)) and the run stays green: the run only fails when the monitoring itself broke. Warnings are shown on the status page and in the run, but do not open an issue. In a run started on another branch, a failing check fails the run.
 
 To run it locally, you need `curl` and `jq`:
 ```sh
@@ -112,15 +112,25 @@ Then open http://localhost:8000.
 
 The [DNS drift](.github/workflows/dns-drift.yml) workflow runs every night, and on demand from the Actions tab. It runs `dnscontrol preview --expect-no-changes` against the providers, and fails if the live records differ from the ones in this repository, for example after a change made in a provider's dashboard. The nameservers set at the registrars that `dnscontrol` manages are compared too. Nothing is changed at the providers.
 
-When it fails, the run summary lists the records that differ, for each domain ([`scripts/dns-drift-report.sh`](scripts/dns-drift-report.sh) writes it). To keep a change, update the files in `domains/` to match it. To discard it, re-run the latest *Push DNS changes* run on `master`.
+When records drift, an issue is opened for each domain that differs (see [Issues](#issues)), and the run summary lists the records ([`scripts/dns-drift-report.sh`](scripts/dns-drift-report.sh) writes it). To keep a change, update the files in `domains/` to match it. To discard it, re-run the latest *Push DNS changes* run on `master`.
 
 The workflow uses the same secrets as the *Push DNS changes* one. The runs of this repository are public, so the report hides the `HOME_IP` secret if it ever shows up in a record.
+
+## Issues
+
+A problem found by the *Domain health* or the *DNS drift* workflow is reported as a GitHub issue, so that a problem that lasts for weeks costs two notifications (one when it opens, one when it is resolved) instead of a failed run notification every day.
+
+- There is one issue per failing domain and per workflow, labeled `domain-health` or `dns-drift`, and assigned to the owner of the repository, which is what notifies them. Warnings never open an issue: they only show on the status page.
+- While the problem lasts, each run refreshes the issue by editing it, which notifies nobody.
+- Once the problem is gone, the run closes the issue with a comment.
+- [`scripts/sync-issues.sh`](scripts/sync-issues.sh) does this, at the end of the scheduled and manual runs on `master`. Those runs stay green when a domain fails. They fail, and GitHub sends its usual failed run notification, when the monitoring itself broke: the check did not complete (nothing is ever closed in that case), or GitHub refused to update the issues.
+- The issues are public like the repository, so the `HOME_IP` secret is hidden in them, and what comes from DNS or from the resolvers is shown in code blocks.
 
 ## Heartbeat
 
 The two scheduled workflows (*Domain health* and *DNS drift*) can ping a heartbeat monitor, such as [Healthchecks.io](https://healthchecks.io), each time they run. The monitor alerts you when the pings stop, which is how you find out that a schedule quietly stopped. Nothing else would tell, and the status page only shows it if you open it. GitHub disables the scheduled workflows of a public repository after 60 days without activity, for example.
 
-[`scripts/heartbeat.sh`](scripts/heartbeat.sh) sends the ping at the end of every scheduled or manual run on `master`, whatever the result of the checks: a failing check fails the run and GitHub notifies you, the ping only says that the workflow ran. Pull request runs never ping.
+[`scripts/heartbeat.sh`](scripts/heartbeat.sh) sends the ping at the end of every scheduled or manual run on `master`, whatever the result of the checks: a failing check opens an issue, the ping only says that the workflow ran. Pull request runs never ping.
 
 To set it up, create one check per workflow in the monitor, with a period of 1 day and a grace time of a few hours (6, for example), and choose where it alerts you. Then save their ping URLs as secrets of this repository:
 ```sh
