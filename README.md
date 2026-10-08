@@ -74,6 +74,23 @@ This command reads the configuration and shows the changes that need to be made,
 ### Apply the changes
 As a precautionary measure, it is not possible to apply the changes manually. You should first create a PR and then merge it to `master`.
 
+## Domain health checks
+
+The [Domain health](.github/workflows/domain-health.yml) workflow runs [`scripts/domain-health.sh`](scripts/domain-health.sh) every day, and on demand from the Actions tab. For each domain in `domains/`, it checks that:
+
+- the domain resolves through a DNSSEC-validating resolver (Google Public DNS). A broken chain of trust, for example a DS record at the registrar that no longer matches the zone's keys, makes the lookup fail with `SERVFAIL`;
+- DNSSEC is still on for the domains that should have it. Mark such a domain with a `// DNSSEC: on` comment in its file in `domains/`: it then fails if its answers stop being validated. A validated domain without the comment only raises a warning;
+- the domain does not expire within 60 days, according to the registry's RDAP server (dates are in UTC).
+
+The workflow fails, and GitHub sends its usual failed workflow notification, when a check fails.
+
+To run it locally, you need `curl` and `jq`:
+```sh
+scripts/domain-health.sh
+```
+
+The `MIN_DAYS` environment variable changes the number of days before expiry (60 by default).
+
 ## Make changes
 
 The `master` branch is protected, it only accepts merges from PRs.
