@@ -1,0 +1,210 @@
+:root {
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --text: #1b1f24;
+  --muted: #5b6573;
+  --border: #d9dee5;
+  --ok-bg: #e3f4e8;
+  --ok-fg: #0f6b2f;
+  --warn-bg: #fff1d6;
+  --warn-fg: #8a5300;
+  --fail-bg: #fde4e2;
+  --fail-fg: #a3231a;
+  --link: #1a5fb4;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0f1318;
+    --surface: #171c23;
+    --text: #e6e9ee;
+    --muted: #9aa5b4;
+    --border: #2a313b;
+    --ok-bg: #12331f;
+    --ok-fg: #6fd48f;
+    --warn-bg: #3a2c0e;
+    --warn-fg: #f0b957;
+    --fail-bg: #40191a;
+    --fail-fg: #ff8f87;
+    --link: #7db3f5;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+main {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 32px 16px 48px;
+}
+
+a {
+  color: var(--link);
+}
+
+h1 {
+  margin: 0 0 4px;
+  font-size: 1.75rem;
+  line-height: 1.2;
+}
+
+.summary {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.summary.ok { color: var(--ok-fg); }
+.summary.warn { color: var(--warn-fg); }
+.summary.fail { color: var(--fail-fg); }
+
+.updated {
+  margin: 4px 0 24px;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.banner {
+  margin: 0 0 16px;
+  padding: 12px 16px;
+  border: 1px solid var(--warn-fg);
+  border-radius: 8px;
+  background: var(--warn-bg);
+  color: var(--warn-fg);
+}
+
+table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+th, td {
+  padding: 10px 16px;
+  text-align: left;
+  vertical-align: baseline;
+}
+
+th {
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border);
+}
+
+tbody tr.row td {
+  border-top: 1px solid var(--border);
+}
+
+tbody tr.row:first-child td {
+  border-top: 0;
+}
+
+tr.notes td {
+  padding-top: 0;
+  color: var(--muted);
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
+}
+
+.name {
+  font-weight: 600;
+}
+
+.tool {
+  margin-left: 8px;
+  color: var(--muted);
+  font-size: 0.8125rem;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+.pill {
+  display: inline-block;
+  padding: 1px 10px;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.pill.ok { background: var(--ok-bg); color: var(--ok-fg); }
+.pill.warn { background: var(--warn-bg); color: var(--warn-fg); }
+.pill.fail { background: var(--fail-bg); color: var(--fail-fg); }
+
+.low {
+  color: var(--fail-fg);
+  font-weight: 600;
+}
+
+footer {
+  margin-top: 24px;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+@media (max-width: 640px) {
+  thead {
+    display: none;
+  }
+
+  table, tbody, tr, td {
+    display: block;
+  }
+
+  /* One card per domain: the name on top, then one "label  value" line per column. */
+  tbody tr.row td {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 2px 16px;
+    border-top: 0;
+  }
+
+  tbody tr.row td::before {
+    content: attr(data-label);
+    color: var(--muted);
+  }
+
+  tbody tr.row td:first-child {
+    display: block;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+  }
+
+  tbody tr.row td:first-child::before {
+    content: none;
+  }
+
+  tbody tr.row td:last-child {
+    padding-bottom: 12px;
+  }
+
+  tbody tr.row:first-child td:first-child {
+    border-top: 0;
+  }
+
+  tr.notes td {
+    padding: 0 16px 12px;
+  }
+}

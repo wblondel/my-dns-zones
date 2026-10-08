@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src data:; base-uri 'none'; form-action 'none'">
+  <meta name="color-scheme" content="light dark">
+  <meta name="robots" content="noindex">
+  <title>Domain health</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Domain health</h1>
+      <p id="summary" class="summary" aria-live="polite">Loading…</p>
+      <p id="updated" class="updated"></p>
+    </header>
+
+    <p id="stale" class="banner" role="alert" hidden></p>
+
+    <table id="domains" hidden>
+      <thead>
+        <tr>
+          <th scope="col">Domain</th>
+          <th scope="col">Status</th>
+          <th scope="col">DNS</th>
+          <th scope="col">DNSSEC</th>
+          <th scope="col">Expires</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <noscript><p class="banner">This page needs JavaScript to show the status of the domains.</p></noscript>
+
+    <footer>
+      <p>
+        <strong>DNS</strong>: the SOA record is resolved through a DNSSEC-validating resolver (Google Public DNS).
+        <strong>DNSSEC</strong>: the answer is validated by that resolver. “Expected” means the domain must keep validating, otherwise it fails.
+        <strong>Expires</strong>: from the registry’s RDAP server, in UTC.
+      </p>
+      <p>
+        <a href="https://github.com/wblondel/my-dns-zones">Source</a> ·
+        <a href="https://github.com/wblondel/my-dns-zones/actions/workflows/domain-health.yml">Workflow runs</a>
+      </p>
+    </footer>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
