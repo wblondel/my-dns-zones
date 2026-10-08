@@ -21,6 +21,6 @@ jobs:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
       - name: DNSControl push
-        uses: wblondel/dnscontrol-action@1e2bf5dd6cf5ed180f6b5b5de10bde5b8fc4d5e1 # v4.26.0
+        uses: wblondel/dnscontrol-action@c47e0e742495410c31ac255276093a46c60f5fe7 # 5.3.0
         with:
           args: push --variable home_ip=${{ secrets.HOME_IP }}
