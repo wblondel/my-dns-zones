@@ -106,6 +106,14 @@ python3 -m http.server --directory site
 
 Then open http://localhost:8000.
 
+## DNS drift detection
+
+The [DNS drift](.github/workflows/dns-drift.yml) workflow runs every night, and on demand from the Actions tab. It runs `dnscontrol preview --expect-no-changes` against the providers, and fails if the live records differ from the ones in this repository, for example after a change made in a provider's dashboard. The nameservers set at the registrars that `dnscontrol` manages are compared too. Nothing is changed at the providers.
+
+When it fails, the run summary lists the records that differ, for each domain ([`scripts/dns-drift-report.sh`](scripts/dns-drift-report.sh) writes it). To keep a change, update the files in `domains/` to match it. To discard it, re-run the latest *Push DNS changes* run on `master`.
+
+The workflow uses the same secrets as the *Push DNS changes* one. The runs of this repository are public, so the report hides the `HOME_IP` secret if it ever shows up in a record.
+
 ## Make changes
 
 The `master` branch is protected, it only accepts merges from PRs.
