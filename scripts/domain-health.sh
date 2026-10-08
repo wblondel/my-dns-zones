@@ -10,25 +10,33 @@
 #   DNSSEC  A domain whose file contains a "// DNSSEC: on" comment must be answered with the AD
 #           (authenticated data) flag. This catches DNSSEC being quietly turned off, which a
 #           plain lookup would not notice. The reverse (validated, but not marked) only warns.
-#   EXPIRES The expiration date is read from the registry's RDAP server and must be more than
-#           MIN_DAYS days away.
+#   EXPIRES The expiration date is read from the registry's RDAP server. It warns when the
+#           domain expires in less than WARN_DAYS days, and fails below FAIL_DAYS days.
 #
-# Requires bash, curl and jq. Exits with 1 if any check fails.
+# Requires bash, curl and jq. Exits with 1 if any check fails (warnings do not fail).
 #
 # Environment:
 #   DOMAINS_DIR  directory containing the domain files (default: domains/ at the repository root)
-#   MIN_DAYS     minimum number of days before expiry (default: 60)
+#   WARN_DAYS    warn when the domain expires in less than this many days (default: 60)
+#   FAIL_DAYS    fail when the domain expires in less than this many days (default: 21)
 #   JSON_OUTPUT  when set, path of a JSON file to write the results to (read by the status page)
 
 set -uo pipefail
 
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 DOMAINS_DIR=${DOMAINS_DIR:-$ROOT/domains}
-MIN_DAYS=${MIN_DAYS:-60}
+WARN_DAYS=${WARN_DAYS:-60}
+FAIL_DAYS=${FAIL_DAYS:-21}
 
-case $MIN_DAYS in
-  '' | *[!0-9]*) echo "MIN_DAYS must be a whole number, got '$MIN_DAYS'" >&2; exit 2 ;;
-esac
+for name in WARN_DAYS FAIL_DAYS; do
+  case ${!name} in
+    '' | *[!0-9]*) echo "$name must be a whole number, got '${!name}'" >&2; exit 2 ;;
+  esac
+done
+if [ "$FAIL_DAYS" -gt "$WARN_DAYS" ]; then
+  echo "FAIL_DAYS ($FAIL_DAYS) must not be greater than WARN_DAYS ($WARN_DAYS)" >&2
+  exit 2
+fi
 
 # Status, AD flag and comment of a DNS-over-HTTPS answer, tab separated.
 read -r -d '' DOH_JQ <<'EOF' || true
@@ -146,8 +154,10 @@ check_domain() {
     expiry="$exp_date (${days}d)"
     if [ "$days" -lt 0 ]; then
       problem FAIL "expired on $exp_date"
-    elif [ "$days" -lt "$MIN_DAYS" ]; then
-      problem FAIL "expires in $days days, less than the $MIN_DAYS day minimum"
+    elif [ "$days" -lt "$FAIL_DAYS" ]; then
+      problem FAIL "expires in $days days, less than the $FAIL_DAYS day limit"
+    elif [ "$days" -lt "$WARN_DAYS" ]; then
+      problem WARN "expires in $days days, renew soon"
     fi
   fi
 
@@ -200,12 +210,14 @@ while read -r domain expect_signed; do
 done <<<"${targets%$'\n'}"
 
 echo
-echo "$total domains checked: $failed failed, $warned with warnings (minimum $MIN_DAYS days before expiry)"
+echo "$total domains checked: $failed failed, $warned with warnings (expiry: warning under $WARN_DAYS days, failure under $FAIL_DAYS days)"
 
 if [ -n "${JSON_OUTPUT:-}" ]; then
   mkdir -p "$(dirname "$JSON_OUTPUT")"
-  jq -s --arg generated_at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --argjson min_days "$MIN_DAYS" \
-    '{generated_at: $generated_at, min_days: $min_days, domains: .}' <<<"$json_rows" >"$JSON_OUTPUT"
+  jq -s --arg generated_at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+    --argjson warn_days "$WARN_DAYS" --argjson fail_days "$FAIL_DAYS" \
+    '{generated_at: $generated_at, warn_days: $warn_days, fail_days: $fail_days, domains: .}' \
+    <<<"$json_rows" >"$JSON_OUTPUT"
 fi
 
 # GitHub Actions: annotations on the run, and the table on the run summary page.

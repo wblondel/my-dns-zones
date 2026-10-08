@@ -80,16 +80,16 @@ The [Domain health](.github/workflows/domain-health.yml) workflow runs [`scripts
 
 - the domain resolves through a DNSSEC-validating resolver (Google Public DNS). A broken chain of trust, for example a DS record at the registrar that no longer matches the zone's keys, makes the lookup fail with `SERVFAIL`;
 - DNSSEC is still on for the domains that should have it. Mark such a domain with a `// DNSSEC: on` comment in its file in `domains/`: it then fails if its answers stop being validated. A validated domain without the comment only raises a warning;
-- the domain does not expire within 60 days, according to the registry's RDAP server (dates are in UTC).
+- the domain does not expire soon, according to the registry's RDAP server (dates are in UTC). It raises a warning under 60 days and fails under 21 days, so a failure means a renewal is urgent.
 
-The workflow fails, and GitHub sends its usual failed workflow notification, when a check fails.
+The workflow fails, and GitHub sends its usual failed workflow notification, when a check fails. Warnings are shown on the status page and in the run, but do not fail it.
 
 To run it locally, you need `curl` and `jq`:
 ```sh
 scripts/domain-health.sh
 ```
 
-The `MIN_DAYS` environment variable changes the number of days before expiry (60 by default).
+The `WARN_DAYS` and `FAIL_DAYS` environment variables change the two expiry thresholds (60 and 21 days by default).
 
 ### Status page
 
