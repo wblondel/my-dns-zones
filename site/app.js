@@ -1,7 +1,6 @@
-'use strict';
-
 // Shows the status.json written by scripts/domain-health.sh. Everything that comes from
 // that file is rendered as text (never as HTML): the notes include text from external APIs.
+// This is a module (see index.html): it is strict, and its constants stay out of the global scope.
 
 const STALE_AFTER_HOURS = 36;
 const SEVERITY = { FAIL: 0, WARN: 1, OK: 2 };
@@ -38,7 +37,7 @@ function formatAge(ms) {
 
 function resultKey(domain) {
   // Anything unexpected is shown as a failure rather than hidden.
-  return Object.prototype.hasOwnProperty.call(SEVERITY, domain.result) ? domain.result : 'FAIL';
+  return Object.hasOwn(SEVERITY, domain.result) ? domain.result : 'FAIL';
 }
 
 function textOrDash(value) {

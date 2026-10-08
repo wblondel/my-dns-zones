@@ -17,7 +17,8 @@ jobs:
         with:
           persist-credentials: false
 
-      # ShellCheck on the shell scripts, actionlint on the workflows. Their versions are pinned in
-      # docker/lint.Dockerfile, which Dependabot keeps up to date.
+      # ShellCheck on the shell scripts, actionlint on the workflows, Biome on the JavaScript of the
+      # status page. Their versions are pinned in docker/lint.Dockerfile, which Dependabot keeps up
+      # to date.
       - name: Lint the scripts and the workflows
         run: bash scripts/lint.sh

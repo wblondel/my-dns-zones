@@ -1,0 +1,12 @@
+{
+  // The rule against HTML sinks in the status page, see scripts/lint.sh.
+  "plugins": ["./.biome/no-html-sinks.grit"],
+  "linter": {
+    "rules": {
+      "complexity": {
+        // el["innerHTML"] must be written el.innerHTML, which the rule above can see.
+        "useLiteralKeys": "error"
+      }
+    }
+  }
+}

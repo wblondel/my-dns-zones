@@ -20,6 +20,7 @@ Then, configure the credentials for:
 - [deSEC](https://docs.dnscontrol.org/service-providers/providers/desec)
 - [Dynadot](https://docs.dnscontrol.org/provider/dynadot)
 - [OVH](https://docs.dnscontrol.org/service-providers/providers/ovh)
+- [Spaceship](https://docs.dnscontrol.org/provider/spaceship)
 
 The steps to obtain the credentials for each provider are listed on the relevant documentation pages.
 
@@ -146,12 +147,14 @@ The `master` branch is protected, it only accepts merges from PRs.
 
 You must first create a branch, then make your changes there and create a PR.
 
-The scripts in `scripts/` and the workflows in `.github/workflows/` are linted on every PR by the [Lint](.github/workflows/lint.yml) workflow, with [ShellCheck](https://www.shellcheck.net) and [actionlint](https://github.com/rhysd/actionlint). To check your changes before pushing them, run the same thing locally (it needs Docker, and only looks at the files tracked by Git, so `git add` new ones first):
+The scripts in `scripts/`, the workflows in `.github/workflows/` and the JavaScript of the status page in `site/` are linted on every PR by the [Lint](.github/workflows/lint.yml) workflow, with [ShellCheck](https://www.shellcheck.net), [actionlint](https://github.com/rhysd/actionlint) and [Biome](https://biomejs.dev). The other `.js` files are `dnscontrol` configuration, so they are not linted. To check your changes before pushing them, run the same thing locally (it needs Docker, and only looks at the files tracked by Git, so `git add` new ones first):
 ```sh
 scripts/lint.sh
 ```
 
-The versions of the two tools are pinned by tag and digest in [`docker/lint.Dockerfile`](docker/lint.Dockerfile). That file is never built: it only lists the images as `FROM` lines, so that Dependabot proposes their updates in a PR (the Lint check runs on that PR, so any new finding shows up before you merge it), and `scripts/lint.sh` reads the images from it. Keep its `FROM image AS name` format.
+The status page shows text that comes from DNS records and from the resolvers, so its JavaScript may only set text. A Biome rule ([`.biome/no-html-sinks.grit`](.biome/no-html-sinks.grit), loaded by [`biome.jsonc`](biome.jsonc)) fails the check on `innerHTML`, `outerHTML`, `insertAdjacentHTML`, `document.write` and `Function()` or `new Function()`, however they are spaced or commented, and Biome's own `noGlobalEval` rule does the same for `eval()`. A string-literal key such as `el["innerHTML"]` must be written `el.innerHTML` (`useLiteralKeys` is an error), so that the rule sees it. This is a safety net against mistakes, not a defence against someone determined: it cannot see a key that is built at run time. The lint also checks that the rule still flags every example of [`.biome/fixtures/bad.js`](.biome/fixtures/bad.js) and nothing in [`good.js`](.biome/fixtures/good.js), so a Biome update that quietly breaks the rule fails the check instead of passing it.
+
+The versions of the three tools are pinned by tag and digest in [`docker/lint.Dockerfile`](docker/lint.Dockerfile). That file is never built: it only lists the images as `FROM` lines, so that Dependabot proposes their updates in a PR (the Lint check runs on that PR, so any new finding shows up before you merge it), and `scripts/lint.sh` reads the images from it. Keep its `FROM image AS name` format.
 
 Secrets are defined as environment's secrets on GitHub, and are used in the `creds.json` file.
 

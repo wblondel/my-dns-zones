@@ -1,0 +1,31 @@
+language js;
+
+// The status page shows text that comes from DNS records and from resolvers: it may only set text,
+// never HTML or code. This flags what turns text into HTML or code, however it is spaced or
+// commented, which a search for the words cannot do. Biome's own noGlobalEval covers eval().
+// String-literal keys such as el["innerHTML"] are made visible to this rule by useLiteralKeys,
+// see biome.jsonc. Examples of what is and is not flagged: .biome/fixtures, which scripts/lint.sh
+// checks against this rule.
+or {
+    `$target.innerHTML`,
+    `$target.innerHTML = $value`,
+    `$target.innerHTML += $value`,
+    `$target.outerHTML`,
+    `$target.outerHTML = $value`,
+    `$target.outerHTML += $value`,
+    `$target.insertAdjacentHTML($...)`,
+    `document.write($...)`,
+    `document.writeln($...)`,
+    `$scope.document.write($...)`,
+    `$scope.document.writeln($...)`,
+    `new Function($...)`,
+    `Function($...)`,
+    `new $scope.Function($...)`,
+    `$scope.Function($...)`
+} as $sink where {
+    register_diagnostic(
+        span = $sink,
+        message = "The status page must set text, never HTML or code: do not use innerHTML, outerHTML, insertAdjacentHTML, document.write or Function().",
+        severity = "error"
+    )
+}
