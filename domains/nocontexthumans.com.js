@@ -1,15 +1,11 @@
 D('nocontexthumans.com', REG_NONE,
     // DNS Zone locations
     DnsProvider(DSP_DESEC, 2),
-    
+
     // HTTP: Fly.io IPs
     A('@', '66.241.124.243'), // shared
     AAAA('@', '2a09:8280:1::4e:f3c1'), // dedicated
     CNAME('www', '@'),
-
-    // Configure emails
-    UsePigeonMailServerFor('@'),
-    IncludeDkimDomainKey('nocontexthumans.com', 'DKIM1', 'rsa', 's', 'email', false),
 
     // CAA
     CAA_BUILDER({
@@ -19,7 +15,9 @@ D('nocontexthumans.com', REG_NONE,
         issue: [
             'letsencrypt.org'
         ],
-        issuewild: 'none',
+        issuewild: [
+            'letsencrypt.org'
+        ],
     }),
 
     // Site verification

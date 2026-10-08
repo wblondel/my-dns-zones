@@ -22,5 +22,12 @@ D('127011.xyz', REG_DYNADOT,
         selector: "20250405",
         flags: ['s'],
         pubkey: "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAsz2wuRJwhqnY/MbFX0jgSWaM7k2I5jalXWbEkFvllniHQJJE3bFCDbJu3lNRbtfUAA4W5zax5w/ZYudweFSQAxAogheod3s6DzkahbSpPMrPB63Ehq16JO5f+XYlGap/WE9dezthhwivKpgv3wiePeCIAgLRnkHsQzKkLNqtjKS++jN7OJtEd/9UOq1ejTWxOZCDnRnOYP5Q0eVZm+Xgcc80B/tdYz6gfhRptBSZ8079A5hk1bKv9V/9CUk/440WxuvEEQs20NHCkwz0B5d8bRC+gMRBghIxened8WtmhBATpulZXIem+TICfxEpTU7VyvVmlPvyn0nIaaWn7bKzdwIDAQAB",
-    })
+    }),
+
+    // Hosted services
+    A('@', home_ip, CF_PROXY_ON),
+    CNAME('www', '@', CF_PROXY_ON),
+    CNAME('homeassistant', '@', CF_PROXY_ON),
+    CNAME('speedtest', '@', CF_PROXY_ON),
+    CNAME('auth', '@', CF_PROXY_ON),
 );

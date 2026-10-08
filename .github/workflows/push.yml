@@ -23,4 +23,4 @@ jobs:
       - name: DNSControl push
         uses: wblondel/dnscontrol-action@1e2bf5dd6cf5ed180f6b5b5de10bde5b8fc4d5e1 # v4.26.0
         with:
-          args: push
+          args: push --variable home_ip=${{ secrets.HOME_IP }}

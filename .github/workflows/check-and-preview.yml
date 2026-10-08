@@ -34,4 +34,4 @@ jobs:
         uses: wblondel/dnscontrol-action@1e2bf5dd6cf5ed180f6b5b5de10bde5b8fc4d5e1 # v4.26.0
         id: dnscontrol_preview
         with:
-          args: preview
+          args: preview --variable home_ip=${{ secrets.HOME_IP }}
