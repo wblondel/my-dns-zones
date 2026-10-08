@@ -48,17 +48,17 @@ function dnssecNode(domain) {
   return node;
 }
 
-function expiresNode(domain, minDays) {
+function expiresNode(domain, status) {
   if (!domain.expires) return el('span', 'muted', '—');
   const node = el('span', null, domain.expires);
   if (typeof domain.days_left === 'number') {
-    const low = domain.days_left < minDays;
-    node.append(el('span', 'muted', ' · '), el('span', (low ? 'low' : 'muted') + ' nowrap', plural(domain.days_left, 'day') + ' left'));
+    const tone = domain.days_left < status.fail_days ? 'low' : domain.days_left < status.warn_days ? 'soon' : 'muted';
+    node.append(el('span', 'muted', ' · '), el('span', tone + ' nowrap', plural(domain.days_left, 'day') + ' left'));
   }
   return node;
 }
 
-function renderRows(domain, minDays) {
+function renderRows(domain, status) {
   const key = resultKey(domain);
   const rows = [];
 
@@ -76,7 +76,7 @@ function renderRows(domain, minDays) {
     cell('Status', el('span', 'pill ' + key.toLowerCase(), LABEL[key])),
     cell('DNS', el('span', null, domain.dns || '—')),
     cell('DNSSEC', dnssecNode(domain)),
-    cell('Expires', expiresNode(domain, minDays)),
+    cell('Expires', expiresNode(domain, status)),
   );
   rows.push(row);
 
@@ -119,7 +119,7 @@ function render(status) {
   } else {
     const age = Date.now() - generated.getTime();
     updated.textContent = 'Last checked ' + formatAge(age) + ' (' + formatUtc(generated) + '). ' +
-      'Expiry minimum: ' + plural(status.min_days, 'day') + '.';
+      'Expiry: warning under ' + plural(status.warn_days, 'day') + ', failure under ' + plural(status.fail_days, 'day') + '.';
     if (age > STALE_AFTER_HOURS * 3600000) {
       const stale = document.getElementById('stale');
       stale.textContent = 'This data is stale: the last check ran ' + formatAge(age) +
@@ -129,7 +129,7 @@ function render(status) {
   }
 
   const body = document.querySelector('#domains tbody');
-  body.replaceChildren(...domains.flatMap((d) => renderRows(d, status.min_days)));
+  body.replaceChildren(...domains.flatMap((d) => renderRows(d, status)));
   document.getElementById('domains').hidden = false;
 }
 

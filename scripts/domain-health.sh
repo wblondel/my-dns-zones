@@ -10,34 +10,49 @@
 #   DNSSEC  A domain whose file contains a "// DNSSEC: on" comment must be answered with the AD
 #           (authenticated data) flag. This catches DNSSEC being quietly turned off, which a
 #           plain lookup would not notice. The reverse (validated, but not marked) only warns.
-#   EXPIRES The expiration date is read from the registry's RDAP server and must be more than
-#           MIN_DAYS days away.
+#   EXPIRES The expiration date is read from the registry's RDAP server. It warns when the
+#           domain expires in less than WARN_DAYS days, and fails below FAIL_DAYS days.
+#   REGISTRY What the registry reports over RDAP must be sound. The domain should have a
+#           registrar transfer lock (it warns if not). Its nameservers must belong to the DNS
+#           provider declared in its file with DnsProvider(DSP_...), see provider_nameservers
+#           below. A domain marked "// DNSSEC: on" must have a DS record: RDAP shows a removed
+#           one right away, while resolvers may keep validating from their cache.
 #
-# Requires bash, curl and jq. Exits with 1 if any check fails.
+# Requires bash, curl and jq. Exits with 1 if any check fails (warnings do not fail).
 #
 # Environment:
 #   DOMAINS_DIR  directory containing the domain files (default: domains/ at the repository root)
-#   MIN_DAYS     minimum number of days before expiry (default: 60)
+#   WARN_DAYS    warn when the domain expires in less than this many days (default: 60)
+#   FAIL_DAYS    fail when the domain expires in less than this many days (default: 21)
 #   JSON_OUTPUT  when set, path of a JSON file to write the results to (read by the status page)
 
 set -uo pipefail
 
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 DOMAINS_DIR=${DOMAINS_DIR:-$ROOT/domains}
-MIN_DAYS=${MIN_DAYS:-60}
+WARN_DAYS=${WARN_DAYS:-60}
+FAIL_DAYS=${FAIL_DAYS:-21}
 
-case $MIN_DAYS in
-  '' | *[!0-9]*) echo "MIN_DAYS must be a whole number, got '$MIN_DAYS'" >&2; exit 2 ;;
-esac
+for name in WARN_DAYS FAIL_DAYS; do
+  case ${!name} in
+    '' | *[!0-9]*) echo "$name must be a whole number, got '${!name}'" >&2; exit 2 ;;
+  esac
+done
+if [ "$FAIL_DAYS" -gt "$WARN_DAYS" ]; then
+  echo "FAIL_DAYS ($FAIL_DAYS) must not be greater than WARN_DAYS ($WARN_DAYS)" >&2
+  exit 2
+fi
 
 # Status, AD flag and comment of a DNS-over-HTTPS answer, tab separated.
 read -r -d '' DOH_JQ <<'EOF' || true
 [(.Status // "?"), (.AD // false), (.Comment // "")] | @tsv
 EOF
 
-# Expiration date (UTC) and the number of days left until then, or "? ?" when RDAP gives none.
+# What RDAP says, tab separated: the expiration date (UTC) and the number of days left until
+# then ("?" for both when RDAP gives none), whether there is a registrar transfer lock, whether
+# the registry has a DS record, and the delegated nameservers ("-" when there are none).
 # RDAP dates are RFC 3339: with or without fractional seconds, "Z" or a numeric offset.
-read -r -d '' EXPIRY_JQ <<'EOF' || true
+read -r -d '' RDAP_JQ <<'EOF' || true
 def epoch:
   capture("^(?<t>[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2})(\\.[0-9]+)?(?<z>Z|[+-][0-9]{2}:[0-9]{2})$")
   | (.t + "Z" | fromdateiso8601)
@@ -45,9 +60,15 @@ def epoch:
        else (if .z[0:1] == "-" then -1 else 1 end) * ((.z[1:3] | tonumber) * 3600 + (.z[4:6] | tonumber) * 60)
        end);
 ([.events[]? | select(.eventAction == "expiration") | .eventDate][0]) as $d
-| if $d == null then "? ?"
-  else ($d | epoch) as $e | "\($e | todate | .[0:10]) \((($e - now) / 86400) | floor)"
-  end
+| (if $d == null then ["?", "?"]
+   else ($d | epoch) as $e | [($e | todate | .[0:10]), ((($e - now) / 86400) | floor | tostring)]
+   end)
+  + [
+    ((.status // []) | map(ascii_downcase) | index("client transfer prohibited") != null | tostring),
+    ((.secureDNS.delegationSigned // false) | tostring),
+    ([.nameservers[]?.ldhName | ascii_downcase | sub("\\.$"; "")] | if length == 0 then "-" else join(" ") end)
+  ]
+| @tsv
 EOF
 
 # fetch [curl options] URL: sets BODY to the response body and returns 0 on HTTP 200.
@@ -104,10 +125,66 @@ problem() {
   fi
 }
 
-# check_domain domain expect_signed: sets result (OK, WARN or FAIL) and notes, and prints a row.
+# provider_nameservers DSP_NAME: prints the nameservers (glob patterns) that DNS provider
+# delegates its domains to. Prints nothing for a provider this script does not know: add it here
+# when you add a provider in globals/providers.js.
+provider_nameservers() {
+  case $1 in
+    DSP_DESEC) echo 'ns1.desec.io ns2.desec.org' ;;
+    DSP_CLOUDFLARE) echo '*.ns.cloudflare.com' ;;
+    DSP_SPACESHIP) echo 'launch1.spaceship.net launch2.spaceship.net' ;;
+  esac
+}
+
+# check_registry providers expect_signed locked signed delegated: what the registry reports.
+# providers is the comma separated DSP_ names declared in the domain file, or "-".
+check_registry() {
+  local providers=$1 expect_signed=$2 locked=$3 signed=$4 delegated=$5
+  local provider rules patterns='' unknown='' stray='' ns pattern matched
+  local -a pattern_list delegated_list
+
+  if [ "$locked" != true ]; then
+    problem WARN "no registrar transfer lock"
+  fi
+  if [ "$expect_signed" = 1 ] && [ "$signed" != true ]; then
+    problem FAIL "the registry has no DS record"
+  fi
+
+  if [ "$providers" = - ]; then
+    return 0
+  fi
+  for provider in ${providers//,/ }; do
+    rules=$(provider_nameservers "$provider")
+    if [ -z "$rules" ]; then unknown="$unknown${unknown:+, }$provider"; else patterns="$patterns $rules"; fi
+  done
+
+  if [ -n "$unknown" ]; then
+    problem WARN "nameservers not checked: domain-health.sh has no rule for $unknown"
+  elif [ "$delegated" = - ]; then
+    problem FAIL "the registry lists no nameservers"
+  else
+    read -r -a pattern_list <<<"$patterns"
+    read -r -a delegated_list <<<"$delegated"
+    for ns in "${delegated_list[@]}"; do
+      matched=0
+      for pattern in "${pattern_list[@]}"; do
+        # The patterns are globs on purpose.
+        # shellcheck disable=SC2254
+        case $ns in $pattern) matched=1 ;; esac
+      done
+      if [ "$matched" = 0 ]; then stray="$stray${stray:+ }$ns"; fi
+    done
+    if [ -n "$stray" ]; then
+      problem FAIL "unexpected nameservers: $stray (the domain file declares ${providers//,/, })"
+    fi
+  fi
+}
+
+# check_domain domain expect_signed providers: sets result (OK, WARN or FAIL) and notes, and
+# prints a row.
 check_domain() {
-  local domain=$1 expect_signed=$2
-  local dns=- dnssec=- expiry=- status ad comment rdap exp_date='' days=''
+  local domain=$1 expect_signed=$2 providers=$3
+  local dns=- dnssec=- expiry=- status ad comment rdap exp_date='' days='' locked signed delegated
   result=OK
   notes=
 
@@ -138,17 +215,22 @@ check_domain() {
     problem FAIL "no RDAP server known for .${domain##*.}"
   elif ! fetch --header 'Accept: application/rdap+json' "$rdap"; then
     problem FAIL "RDAP lookup failed ($ERR)"
-  elif ! read -r exp_date days < <(jq -r "$EXPIRY_JQ" <<<"$BODY"); then
+  elif ! IFS=$'\t' read -r exp_date days locked signed delegated < <(jq -r "$RDAP_JQ" <<<"$BODY"); then
     problem FAIL "RDAP answer could not be read"
-  elif [ "$days" = '?' ]; then
-    problem FAIL "RDAP does not give an expiration date"
   else
-    expiry="$exp_date (${days}d)"
-    if [ "$days" -lt 0 ]; then
-      problem FAIL "expired on $exp_date"
-    elif [ "$days" -lt "$MIN_DAYS" ]; then
-      problem FAIL "expires in $days days, less than the $MIN_DAYS day minimum"
+    if [ "$days" = '?' ]; then
+      problem FAIL "RDAP does not give an expiration date"
+    else
+      expiry="$exp_date (${days}d)"
+      if [ "$days" -lt 0 ]; then
+        problem FAIL "expired on $exp_date"
+      elif [ "$days" -lt "$FAIL_DAYS" ]; then
+        problem FAIL "expires in $days days, less than the $FAIL_DAYS day limit"
+      elif [ "$days" -lt "$WARN_DAYS" ]; then
+        problem WARN "expires in $days days, renew soon"
+      fi
     fi
+    check_registry "$providers" "$expect_signed" "$locked" "$signed" "$delegated"
   fi
 
   printf '%-*s  %-8s  %-6s  %-18s  %-6s  %s\n' "$width" "$domain" "$dns" "$dnssec" "$expiry" "$result" "$notes" |
@@ -160,7 +242,7 @@ check_domain() {
     --arg expires "$exp_date" --arg days "$days" --arg notes "$notes" \
     '{domain: $domain, result: $result, dns: $dns,
       dnssec: (if $dnssec == "-" then null else $dnssec end), dnssec_expected: $dnssec_expected,
-      expires: (if $expires == "" then null else $expires end),
+      expires: (if $expires == "" or $expires == "?" then null else $expires end),
       days_left: ($days | tonumber? // null), notes: $notes}')$'\n'
 }
 
@@ -173,9 +255,12 @@ for file in "$DOMAINS_DIR"/*.js; do
   if grep -Eiq '^[[:space:]]*//[[:space:]]*DNSSEC:[[:space:]]*on[[:space:]]*$' "$file"; then
     expect_signed=1
   fi
+  # The DNS providers of the file, without the commented out ones: DSP_DESEC,DSP_CLOUDFLARE
+  providers=$(grep -vE '^[[:space:]]*//' "$file" | grep -oE 'DnsProvider\([[:space:]]*DSP_[A-Za-z0-9_]+' |
+    sed -E 's/.*(DSP_[A-Za-z0-9_]+)$/\1/' | sort -u | paste -sd, -)
   # "|| [ -n ... ]": sed does not end its last line with a newline when the file does not either.
   while IFS= read -r domain || [ -n "$domain" ]; do
-    targets+="$domain $expect_signed"$'\n'
+    targets+="$domain $expect_signed ${providers:--}"$'\n'
     if [ "${#domain}" -gt "$width" ]; then width=${#domain}; fi
   done < <(sed -nE "s/^[[:space:]]*D\([[:space:]]*['\"]([^'\"]+)['\"].*/\1/p" "$file")
 done
@@ -190,8 +275,8 @@ if fetch https://data.iana.org/rdap/dns.json; then RDAP_BOOTSTRAP=$BODY; else BO
 
 total=0 failed=0 warned=0 summary_rows='' annotations='' json_rows=''
 printf '%-*s  %-8s  %-6s  %-18s  %-6s  %s\n' "$width" DOMAIN DNS DNSSEC EXPIRES RESULT NOTES
-while read -r domain expect_signed; do
-  check_domain "$domain" "$expect_signed"
+while read -r domain expect_signed providers; do
+  check_domain "$domain" "$expect_signed" "$providers"
   total=$((total + 1))
   case $result in
     FAIL) failed=$((failed + 1)); annotations+="::error title=Domain health::$domain: $notes"$'\n' ;;
@@ -200,12 +285,14 @@ while read -r domain expect_signed; do
 done <<<"${targets%$'\n'}"
 
 echo
-echo "$total domains checked: $failed failed, $warned with warnings (minimum $MIN_DAYS days before expiry)"
+echo "$total domains checked: $failed failed, $warned with warnings (expiry: warning under $WARN_DAYS days, failure under $FAIL_DAYS days)"
 
 if [ -n "${JSON_OUTPUT:-}" ]; then
   mkdir -p "$(dirname "$JSON_OUTPUT")"
-  jq -s --arg generated_at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --argjson min_days "$MIN_DAYS" \
-    '{generated_at: $generated_at, min_days: $min_days, domains: .}' <<<"$json_rows" >"$JSON_OUTPUT"
+  jq -s --arg generated_at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+    --argjson warn_days "$WARN_DAYS" --argjson fail_days "$FAIL_DAYS" \
+    '{generated_at: $generated_at, warn_days: $warn_days, fail_days: $fail_days, domains: .}' \
+    <<<"$json_rows" >"$JSON_OUTPUT"
 fi
 
 # GitHub Actions: annotations on the run, and the table on the run summary page.

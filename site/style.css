@@ -157,6 +157,11 @@ tr.notes td {
   font-weight: 600;
 }
 
+.soon {
+  color: var(--warn-fg);
+  font-weight: 600;
+}
+
 footer {
   margin-top: 24px;
   color: var(--muted);
