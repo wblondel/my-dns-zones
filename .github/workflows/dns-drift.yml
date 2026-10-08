@@ -48,3 +48,11 @@ jobs:
           DNSCONTROL_OUTCOME: ${{ steps.drift.outcome }}
           HOME_IP: ${{ secrets.HOME_IP }}
         run: bash scripts/dns-drift-report.sh drift-report.json
+
+      # Tells the heartbeat monitor that the run happened, whatever the result of the comparison: the
+      # failed run notification is for the drift, the monitor is for a schedule that stopped.
+      - name: Ping the heartbeat monitor
+        if: ${{ !cancelled() && github.ref == 'refs/heads/master' }}
+        env:
+          HEARTBEAT_URL: ${{ secrets.HEARTBEAT_DNS_DRIFT_URL }}
+        run: bash scripts/heartbeat.sh
