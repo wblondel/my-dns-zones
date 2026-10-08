@@ -1,1 +1,1 @@
-FROM dnscontrol/dnscontrol:5.3.1
+FROM dnscontrol/dnscontrol:5.3.0
