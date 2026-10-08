@@ -117,26 +117,49 @@ Lorsque des enregistrements dérivent, une issue est ouverte pour chaque domaine
 
 Le workflow utilise les mêmes secrets que *Push DNS changes*. Les exécutions de ce dépôt sont publiques : le rapport masque donc le secret `HOME_IP` s'il apparaît dans un enregistrement.
 
+## Analyse Zonemaster
+
+Le workflow [Zonemaster](../../../.github/workflows/zonemaster.yml) exécute [`scripts/zonemaster.sh`](../../../scripts/zonemaster.sh) le premier jour de chaque mois, et à la demande depuis l'onglet *Actions*. [Zonemaster](https://zonemaster.net) est l'outil de contrôle de la qualité DNS que maintiennent l'AFNIC et l'IIS, les registres des `.fr` et `.se`. Il exécute toute sa suite de tests sur chaque domaine de `domains/` : la délégation, la cohérence des serveurs de noms et de leurs enregistrements SOA, la chaîne DNSSEC (enregistrements DS, clés, signatures), la connectivité des serveurs de noms, les bases des enregistrements de messagerie... Là où les [vérifications de santé des domaines](#vérifications-de-santé-des-domaines) demandent si un domaine fonctionne aujourd'hui, celle-ci demande si sa configuration DNS est saine.
+
+Chaque constatation a un niveau, de `NOTICE` à `CRITICAL` :
+
+- un domaine avec une constatation `ERROR` ou `CRITICAL` échoue. Une analyse qui en trouve une est relancée une seconde fois après 30 secondes, et la seconde fait foi : une erreur qui n'était qu'un accroc du réseau ne fait donc pas échouer le domaine ;
+- un domaine avec un `WARNING` ne provoque qu'un avertissement. Il devrait être corrigé sauf raison contraire, mais ce n'est pas urgent, et certains avertissements sont attendus : tous les serveurs de noms d'un domaine chez un seul fournisseur (`IPV4_ONE_ASN`), ou un domaine parqué qui n'est pas signé (`DS07_NOT_SIGNED`), par exemple ;
+- les `NOTICE` sont seulement comptés.
+
+Le résumé de l'exécution liste les constatations de chaque domaine avec leurs tags, et les [spécifications des cas de test](https://doc.zonemaster.net/latest/specifications/tests/README.html) (en anglais) expliquent ce que chaque tag signifie. Sur `master`, un domaine en échec ouvre une issue (voir [Issues GitHub](#issues-github)) et l'exécution reste verte : elle n'échoue que lorsque la surveillance elle-même est tombée en panne, par exemple quand un domaine n'a pas pu être analysé (l'issue de ce domaine est alors laissée telle quelle). Un avertissement n'ouvre pas d'issue. Dans une exécution lancée sur une autre branche, un domaine en échec fait échouer l'exécution. IPv6 n'est pas testé, car les *runners* de GitHub n'ont pas de connectivité IPv6.
+
+L'analyseur est l'image [`zonemaster/cli`](https://hub.docker.com/r/zonemaster/cli), épinglée par tag et par digest dans [`docker/zonemaster.Dockerfile`](../../../docker/zonemaster.Dockerfile). Comme [`docker/lint.Dockerfile`](../../../docker/lint.Dockerfile) (voir [Modification de la configuration](#modification-de-la-configuration)), ce fichier n'est jamais construit : Dependabot propose la mise à jour de sa ligne `FROM` dans une demande de fusion de branches, et `scripts/zonemaster.sh` y lit l'image ; conservez donc son format `FROM image AS zonemaster`. Le workflow s'exécute aussi sur les demandes de fusion qui le modifient : les constatations d'une nouvelle version apparaissent donc avant que vous ne la fusionniez.
+
+Pour l'exécuter en local, vous avez besoin de Docker et de `jq` :
+```sh
+scripts/zonemaster.sh                # tous les domaines de domains/
+scripts/zonemaster.sh example.com    # seulement les domaines que vous nommez
+```
+
+Une analyse dure environ 30 secondes. L'image n'existe que pour amd64 : Docker l'émule donc sur Apple Silicon, ce qui est plus lent. La variable d'environnement `JOBS` change le nombre d'analyses exécutées en même temps (4 par défaut), et `RETRY_DELAY` la pause avant la seconde analyse d'un domaine (30 secondes par défaut).
+
 ## Issues GitHub
 
-Un problème trouvé par le workflow *Domain health* ou *DNS drift* est signalé par une issue GitHub (un ticket), pour qu'un problème qui dure des semaines coûte deux notifications (une à son ouverture, une à sa résolution) au lieu d'une notification d'échec d'exécution chaque jour.
+Un problème trouvé par le workflow *Domain health*, *DNS drift* ou *Zonemaster* est signalé par une issue GitHub (un ticket), pour qu'un problème qui dure des semaines coûte deux notifications (une à son ouverture, une à sa résolution) au lieu d'une notification d'échec d'exécution chaque jour.
 
-- Il y a une issue par domaine en échec et par workflow, avec le label `domain-health` ou `dns-drift`, assignée au propriétaire du dépôt, ce qui le notifie. Les avertissements n'ouvrent jamais d'issue : ils n'apparaissent que sur la page de statut.
+- Il y a une issue par domaine en échec et par workflow, avec le label `domain-health`, `dns-drift` ou `zonemaster`, assignée au propriétaire du dépôt, ce qui le notifie. Les avertissements n'ouvrent jamais d'issue : ils n'apparaissent que sur la page de statut, ou dans le résumé de l'exécution pour Zonemaster.
 - Tant que le problème dure, chaque exécution rafraîchit l'issue en la modifiant, ce qui ne notifie personne.
 - Une fois le problème disparu, l'exécution ferme l'issue avec un commentaire.
-- [`scripts/sync-issues.sh`](../../../scripts/sync-issues.sh) s'en charge, à la fin des exécutions planifiées et manuelles sur `master`. Ces exécutions restent vertes quand un domaine échoue. Elles échouent, et GitHub envoie sa notification habituelle d'échec d'exécution, quand la surveillance elle-même est tombée en panne : la vérification ne s'est pas terminée (rien n'est jamais fermé dans ce cas), ou GitHub a refusé de mettre à jour les issues.
+- [`scripts/sync-issues.sh`](../../../scripts/sync-issues.sh) s'en charge, à la fin des exécutions planifiées et manuelles sur `master`. Ces exécutions restent vertes quand un domaine échoue. Elles échouent, et GitHub envoie sa notification habituelle d'échec d'exécution, quand la surveillance elle-même est tombée en panne : la vérification ne s'est pas terminée (rien n'est jamais fermé dans ce cas, et un domaine que Zonemaster n'a pas pu analyser garde son issue telle quelle), ou GitHub a refusé de mettre à jour les issues.
 - Les issues sont publiques comme le dépôt : le secret `HOME_IP` y est donc masqué, et ce qui provient du DNS ou des résolveurs est affiché dans des blocs de code.
 
 ## Signal de vie (*heartbeat*)
 
-Les deux workflows planifiés (*Domain health* et *DNS drift*) peuvent envoyer un signal à un service de surveillance, comme [Healthchecks.io](https://healthchecks.io), à chaque exécution. Le service vous alerte lorsque les signaux s'arrêtent, ce qui permet de découvrir qu'une planification s'est arrêtée silencieusement. Rien d'autre ne le signalerait, et la page de statut ne le montre que si vous l'ouvrez. GitHub désactive par exemple les workflows planifiés d'un dépôt public après 60 jours sans activité.
+Les trois workflows planifiés (*Domain health*, *DNS drift* et *Zonemaster*) peuvent envoyer un signal à un service de surveillance, comme [Healthchecks.io](https://healthchecks.io), à chaque exécution. Le service vous alerte lorsque les signaux s'arrêtent, ce qui permet de découvrir qu'une planification s'est arrêtée silencieusement. Rien d'autre ne le signalerait, et la page de statut ne le montre que si vous l'ouvrez. GitHub désactive par exemple les workflows planifiés d'un dépôt public après 60 jours sans activité.
 
 [`scripts/heartbeat.sh`](../../../scripts/heartbeat.sh) envoie le signal à la fin de chaque exécution planifiée ou manuelle sur `master`, quel que soit le résultat des vérifications : une vérification en échec ouvre une issue, le signal indique seulement que le workflow s'est exécuté. Les exécutions sur demande de fusion de branches n'envoient jamais de signal.
 
-Pour le mettre en place, créez une vérification par workflow dans le service, avec une période de 1 jour et un délai de grâce de quelques heures (6, par exemple), et choisissez où il vous alerte. Enregistrez ensuite leurs URL de signal comme secrets de ce dépôt :
+Pour le mettre en place, créez une vérification par workflow dans le service, avec une période de 1 jour et un délai de grâce de quelques heures (6, par exemple), et choisissez où il vous alerte. Celle de Zonemaster s'exécute une fois par mois : donnez-lui la planification cron `23 4 1 * *` (en UTC) et un délai de grâce de 2 jours. Enregistrez ensuite leurs URL de signal comme secrets de ce dépôt :
 ```sh
 gh secret set HEARTBEAT_DOMAIN_HEALTH_URL   # Domain health, s'exécute à 06:17 UTC
 gh secret set HEARTBEAT_DNS_DRIFT_URL       # DNS drift, s'exécute à 03:41 UTC
+gh secret set HEARTBEAT_ZONEMASTER_URL      # Zonemaster, s'exécute à 04:23 UTC le premier du mois
 ```
 
 `gh secret set` demande la valeur : elle ne se retrouve donc pas dans l'historique de votre shell. Une URL de signal permet à n'importe qui d'envoyer des signaux pour sa vérification : gardez-la secrète. Tant qu'un secret n'est pas défini, l'exécution n'affiche qu'une notice. Un service de surveillance en panne ne fait pas non plus échouer l'exécution, le signal affiche simplement un avertissement.

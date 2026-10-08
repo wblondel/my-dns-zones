@@ -96,3 +96,5 @@ creds.local.json
 site/status.json
 # Written by dnscontrol --report in the DNS drift workflow
 drift-report.json
+# Written by scripts/zonemaster.sh in the Zonemaster workflow
+zonemaster-report.json

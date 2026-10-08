@@ -117,26 +117,49 @@ When records drift, an issue is opened for each domain that differs (see [Issues
 
 The workflow uses the same secrets as the *Push DNS changes* one. The runs of this repository are public, so the report hides the `HOME_IP` secret if it ever shows up in a record.
 
+## Zonemaster scan
+
+The [Zonemaster](.github/workflows/zonemaster.yml) workflow runs [`scripts/zonemaster.sh`](scripts/zonemaster.sh) on the first day of every month, and on demand from the Actions tab. [Zonemaster](https://zonemaster.net) is the DNS quality checker that AFNIC and IIS, the registries of `.fr` and `.se`, maintain. It runs its whole test suite against each domain in `domains/`: the delegation, the consistency of the nameservers and of their SOA records, the DNSSEC chain (DS records, keys, signatures), the connectivity of the nameservers, the basics of the mail records... Where the [domain health checks](#domain-health-checks) ask whether a domain works today, this asks whether its DNS setup is sound.
+
+Every finding has a level, from `NOTICE` up to `CRITICAL`:
+
+- a domain with an `ERROR` or a `CRITICAL` finding fails. A scan that finds one is run a second time after 30 seconds, and the second one counts, so an error that was a network hiccup does not fail the domain;
+- a domain with a `WARNING` only raises a warning. It should be fixed unless there is a reason not to, but it is not urgent, and some warnings are expected: all the nameservers of a domain being at one provider (`IPV4_ONE_ASN`), or a parked domain not being signed (`DS07_NOT_SIGNED`), for example;
+- the `NOTICE`s are only counted.
+
+The run summary lists the findings of every domain with their tags, and the [test case specifications](https://doc.zonemaster.net/latest/specifications/tests/README.html) tell what each tag means. On `master`, a failing domain opens an issue (see [Issues](#issues)) and the run stays green: the run only fails when the monitoring itself broke, for example when a domain could not be scanned (the issue of that domain is then left as it is). A warning does not open an issue. In a run started on another branch, a failing domain fails the run. IPv6 is not tested, as the runners of GitHub have no IPv6 connectivity.
+
+The scanner is the [`zonemaster/cli`](https://hub.docker.com/r/zonemaster/cli) image, pinned by tag and digest in [`docker/zonemaster.Dockerfile`](docker/zonemaster.Dockerfile). Like [`docker/lint.Dockerfile`](docker/lint.Dockerfile) (see [Make changes](#make-changes)), that file is never built: Dependabot proposes the update of its `FROM` line in a PR, and `scripts/zonemaster.sh` reads the image from it, so keep its `FROM image AS zonemaster` format. The workflow also runs on the PRs that change it, so the findings of a new version show up before you merge it.
+
+To run it locally, you need Docker and `jq`:
+```sh
+scripts/zonemaster.sh                # every domain of domains/
+scripts/zonemaster.sh example.com    # only the domains you name
+```
+
+A scan takes about 30 seconds. The image only exists for amd64, so Docker emulates it on Apple Silicon, which is slower. The `JOBS` environment variable changes the number of scans that run at the same time (4 by default), and `RETRY_DELAY` the pause before the second scan of a domain (30 seconds by default).
+
 ## Issues
 
-A problem found by the *Domain health* or the *DNS drift* workflow is reported as a GitHub issue, so that a problem that lasts for weeks costs two notifications (one when it opens, one when it is resolved) instead of a failed run notification every day.
+A problem found by the *Domain health*, the *DNS drift* or the *Zonemaster* workflow is reported as a GitHub issue, so that a problem that lasts for weeks costs two notifications (one when it opens, one when it is resolved) instead of a failed run notification every day.
 
-- There is one issue per failing domain and per workflow, labeled `domain-health` or `dns-drift`, and assigned to the owner of the repository, which is what notifies them. Warnings never open an issue: they only show on the status page.
+- There is one issue per failing domain and per workflow, labeled `domain-health`, `dns-drift` or `zonemaster`, and assigned to the owner of the repository, which is what notifies them. Warnings never open an issue: they only show on the status page, or in the run summary for Zonemaster.
 - While the problem lasts, each run refreshes the issue by editing it, which notifies nobody.
 - Once the problem is gone, the run closes the issue with a comment.
-- [`scripts/sync-issues.sh`](scripts/sync-issues.sh) does this, at the end of the scheduled and manual runs on `master`. Those runs stay green when a domain fails. They fail, and GitHub sends its usual failed run notification, when the monitoring itself broke: the check did not complete (nothing is ever closed in that case), or GitHub refused to update the issues.
+- [`scripts/sync-issues.sh`](scripts/sync-issues.sh) does this, at the end of the scheduled and manual runs on `master`. Those runs stay green when a domain fails. They fail, and GitHub sends its usual failed run notification, when the monitoring itself broke: the check did not complete (nothing is ever closed in that case, and a domain that Zonemaster could not scan keeps its issue as it is), or GitHub refused to update the issues.
 - The issues are public like the repository, so the `HOME_IP` secret is hidden in them, and what comes from DNS or from the resolvers is shown in code blocks.
 
 ## Heartbeat
 
-The two scheduled workflows (*Domain health* and *DNS drift*) can ping a heartbeat monitor, such as [Healthchecks.io](https://healthchecks.io), each time they run. The monitor alerts you when the pings stop, which is how you find out that a schedule quietly stopped. Nothing else would tell, and the status page only shows it if you open it. GitHub disables the scheduled workflows of a public repository after 60 days without activity, for example.
+The three scheduled workflows (*Domain health*, *DNS drift* and *Zonemaster*) can ping a heartbeat monitor, such as [Healthchecks.io](https://healthchecks.io), each time they run. The monitor alerts you when the pings stop, which is how you find out that a schedule quietly stopped. Nothing else would tell, and the status page only shows it if you open it. GitHub disables the scheduled workflows of a public repository after 60 days without activity, for example.
 
 [`scripts/heartbeat.sh`](scripts/heartbeat.sh) sends the ping at the end of every scheduled or manual run on `master`, whatever the result of the checks: a failing check opens an issue, the ping only says that the workflow ran. Pull request runs never ping.
 
-To set it up, create one check per workflow in the monitor, with a period of 1 day and a grace time of a few hours (6, for example), and choose where it alerts you. Then save their ping URLs as secrets of this repository:
+To set it up, create one check per workflow in the monitor, with a period of 1 day and a grace time of a few hours (6, for example), and choose where it alerts you. The Zonemaster one runs once a month: give it the cron schedule `23 4 1 * *` (in UTC) and a grace time of 2 days. Then save their ping URLs as secrets of this repository:
 ```sh
 gh secret set HEARTBEAT_DOMAIN_HEALTH_URL   # Domain health, runs at 06:17 UTC
 gh secret set HEARTBEAT_DNS_DRIFT_URL       # DNS drift, runs at 03:41 UTC
+gh secret set HEARTBEAT_ZONEMASTER_URL      # Zonemaster, runs at 04:23 UTC on the first of the month
 ```
 
 `gh secret set` asks for the value, so it does not end up in your shell history. A ping URL lets anybody send pings for its check, so keep it secret. Until a secret is set, the run only shows a notice. A monitor that is down does not fail the run either, the ping just shows a warning.
