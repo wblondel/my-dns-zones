@@ -96,6 +96,8 @@ The `WARN_DAYS` and `FAIL_DAYS` environment variables change the two expiry thre
 
 The same workflow publishes the results as a status page, built from [`site/`](site) and deployed with GitHub Pages. It lists every domain, failures first, and shows a warning when its data is more than 36 hours old, which means the scheduled workflow stopped running. The page is only deployed from `master`.
 
+The page also shows the registrar and the DNS provider of each domain, read from its file in `domains/`: the `REG_` constant of the `D()` call and the `DnsProvider(DSP_...)` ones. For a registrar that `dnscontrol` does not support, declared as `REG_NONE`, write its name in a `// Registrar: Name` comment in the file. The names shown come from `label` in the script: add the constants you add in `globals/providers.js` there, otherwise a name is made from the constant (`REG_FOO_BAR` is shown as "Foo bar").
+
 GitHub Pages must use **GitHub Actions** as its source (*Settings > Pages > Build and deployment > Source*).
 
 To preview the page locally:
