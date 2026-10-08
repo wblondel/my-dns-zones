@@ -20,6 +20,7 @@ Then, configure the credentials for:
 - [deSEC](https://docs.dnscontrol.org/service-providers/providers/desec)
 - [Dynadot](https://docs.dnscontrol.org/provider/dynadot)
 - [OVH](https://docs.dnscontrol.org/service-providers/providers/ovh)
+- [Spaceship](https://docs.dnscontrol.org/provider/spaceship)
 
 The steps to obtain the credentials for each provider are listed on the relevant documentation pages.
 

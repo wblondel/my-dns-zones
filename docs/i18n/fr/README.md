@@ -20,6 +20,7 @@ Ensuite, configurez les identifiants pour:
 - [deSEC](https://docs.dnscontrol.org/service-providers/providers/desec)
 - [Dynadot](https://docs.dnscontrol.org/provider/dynadot)
 - [OVH](https://docs.dnscontrol.org/service-providers/providers/ovh)
+- [Spaceship](https://docs.dnscontrol.org/provider/spaceship)
 
 Les étapes à suivre pour obtenir les informations d'identification de chaque fournisseur de services sont listées sur les pages de documentation correspondantes.
 
@@ -78,7 +79,7 @@ Par mesure de précaution, il n'est pas possible d'appliquer les modifications m
 
 Le workflow [Domain health](../../../.github/workflows/domain-health.yml) exécute [`scripts/domain-health.sh`](../../../scripts/domain-health.sh) tous les jours, et à la demande depuis l'onglet *Actions*. Pour chaque domaine de `domains/`, il vérifie que :
 
-- le domaine se résout via un résolveur qui valide DNSSEC (Google Public DNS). Une chaîne de confiance rompue, par exemple un enregistrement DS chez le registrar qui ne correspond plus aux clés de la zone, fait échouer la résolution avec `SERVFAIL`. Lorsque Google est injoignable, ou que sa réponse semble anormale (une erreur, ou un domaine marqué `// DNSSEC: on` qui ne se valide pas), Cloudflare (`1.1.1.1`) est aussi interrogé avant que quoi que ce soit n'échoue : il prend le relais quand Google est en panne, un problème que les deux voient est un échec, et des résolveurs en désaccord ne donnent qu'un avertissement. Un résolveur en panne n'est pas réinterrogé pendant le reste de l'exécution, de sorte qu'une panne ne la ralentit pas ;
+- le domaine se résout via un résolveur qui valide DNSSEC (Google Public DNS). Une chaîne de confiance rompue, par exemple un enregistrement DS chez le registrar qui ne correspond plus aux clés de la zone, fait échouer la résolution avec `SERVFAIL`. Lorsque Google est injoignable, ou que sa réponse semble anormale (une erreur, ou un domaine marqué `// DNSSEC: on` qui ne se valide pas), Cloudflare (`1.1.1.1`) est aussi interrogé avant que quoi que ce soit n'échoue : il prend le relais quand Google est en panne, un problème que les deux voient est un échec, et des résolveurs en désaccord ne donnent qu'un avertissement. Un résolveur en panne n'est plus interrogé pendant le reste de l'exécution, de sorte qu'une panne ne la ralentit pas ;
 - DNSSEC est toujours activé pour les domaines qui doivent l'avoir. Marquez un tel domaine avec un commentaire `// DNSSEC: on` dans son fichier de `domains/` : il échoue alors si ses réponses ne sont plus validées. Un domaine validé sans ce commentaire ne provoque qu'un avertissement ;
 - le domaine n'expire pas bientôt, d'après le serveur RDAP du registre (les dates sont en UTC). Il y a un avertissement en dessous de 60 jours et un échec en dessous de 21 jours : un échec signifie donc qu'un renouvellement est urgent ;
 - les données RDAP du registre sont saines. Le domaine devrait avoir un verrou de transfert chez le registrar (avertissement sinon). Ses serveurs de noms doivent appartenir au fournisseur DNS déclaré dans son fichier avec `DnsProvider(DSP_...)` : lorsque vous ajoutez un fournisseur dans `globals/providers.js`, ajoutez ses serveurs de noms dans `provider_nameservers` dans le script, sinon la vérification ne fait qu'avertir. Un domaine marqué `// DNSSEC: on` doit aussi avoir un enregistrement DS au registre.
