@@ -123,7 +123,7 @@ Le workflow [Zonemaster](../../../.github/workflows/zonemaster.yml) exécute [`s
 
 Chaque constatation a un niveau, de `NOTICE` à `CRITICAL` :
 
-- un domaine avec une constatation `ERROR` ou `CRITICAL` échoue. Une analyse qui en trouve une est relancée une seconde fois après 30 secondes, et la seconde fait foi : une erreur qui n'était qu'un accroc du réseau ne fait donc pas échouer le domaine ;
+- un domaine avec une constatation `ERROR` ou `CRITICAL` échoue. Une analyse qui en trouve une, ou qui ne se termine pas, est relancée après 30 secondes, puis une troisième fois après 90 secondes de plus si la seconde n'est pas meilleure. La dernière analyse terminée fait foi : une erreur ne fait donc échouer le domaine que si elle survit à trois analyses, ce qui n'est pas le cas d'un accroc du réseau ;
 - un domaine avec un `WARNING` ne provoque qu'un avertissement. Il devrait être corrigé sauf raison contraire, mais ce n'est pas urgent, et certains avertissements sont attendus : tous les serveurs de noms d'un domaine chez un seul fournisseur (`IPV4_ONE_ASN`), ou un domaine parqué qui n'est pas signé (`DS07_NOT_SIGNED`), par exemple ;
 - les `NOTICE` sont seulement comptés.
 
@@ -137,7 +137,7 @@ scripts/zonemaster.sh                # tous les domaines de domains/
 scripts/zonemaster.sh example.com    # seulement les domaines que vous nommez
 ```
 
-Une analyse dure environ 30 secondes. L'image n'existe que pour amd64 : Docker l'émule donc sur Apple Silicon, ce qui est plus lent. La variable d'environnement `JOBS` change le nombre d'analyses exécutées en même temps (4 par défaut), et `RETRY_DELAY` la pause avant la seconde analyse d'un domaine (30 secondes par défaut).
+Une analyse dure environ 30 secondes. L'image n'existe que pour amd64 : Docker l'émule donc sur Apple Silicon, ce qui est plus lent. La variable d'environnement `JOBS` change le nombre d'analyses exécutées en même temps (4 par défaut), et `RETRY_DELAY` la pause avant la seconde analyse d'un domaine (30 secondes par défaut, et trois fois plus longue avant une troisième analyse).
 
 ## Issues GitHub
 
