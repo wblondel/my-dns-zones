@@ -2,9 +2,9 @@
 #
 # Lints the shell scripts with ShellCheck, the GitHub Actions workflows with actionlint (which
 # also runs ShellCheck on their "run:" blocks), and the JavaScript of the status page (site/*.js)
-# with Biome. That page shows text that comes from DNS records and from resolvers, so its
-# JavaScript is also checked for the few things that turn text into HTML. It is what the Lint
-# workflow runs on pull requests.
+# with Biome. That page shows text that comes from DNS records and from resolvers, so a Biome
+# plugin also fails on the few things that turn text into HTML or code (see biome.jsonc), and the
+# plugin itself is tested. It is what the Lint workflow runs on pull requests.
 #
 # Usage: scripts/lint.sh
 #
@@ -64,15 +64,32 @@ else
 fi
 
 # The status page shows notes and record values that come from outside: it may only set text.
-# A lookalike such as "retrieval(" is not a call to eval().
-sinks=$(git ls-files -z 'site/*.js' |
-  xargs -0 grep -n -E 'innerHTML|outerHTML|insertAdjacentHTML|document\.write|(^|[^[:alnum:]_])eval\(|new Function\(' || true)
-if [ -n "$sinks" ]; then
-  echo "$sinks"
-  echo "HTML sinks: the status page must set text (textContent), never HTML or code"
+# The Biome run above enforces that with a plugin (.biome/no-html-sinks.grit, loaded by
+# biome.jsonc). A plugin that quietly stops matching is worse than none, and a first draft of this
+# one did, so check here that it still flags every line marked "// sink" of the bad examples, and
+# no error in the good ones. A Biome update that breaks the rule fails here instead of passing.
+biome() { docker run --rm -v "$PWD:/work" -w /work "$BIOME_IMAGE" "$@"; }
+expected=$(grep -n '// sink$' .biome/fixtures/bad.js | cut -d: -f1)
+flagged=$(biome lint --diagnostic-level=error --max-diagnostics=500 --reporter=github .biome/fixtures/bad.js 2>/dev/null |
+  sed -n 's/.*,line=\([0-9]*\),.*/\1/p')
+missed=''
+for line in $expected; do
+  case $'\n'"$flagged"$'\n' in
+    *$'\n'"$line"$'\n'*) ;;
+    *) missed="$missed $line" ;;
+  esac
+done
+if [ -z "$expected" ]; then
+  echo "HTML sinks rule: no example is marked \"// sink\" in .biome/fixtures/bad.js"
+  status=1
+elif [ -n "$missed" ]; then
+  echo "HTML sinks rule: it no longer flags these lines of .biome/fixtures/bad.js:$missed"
+  status=1
+elif ! biome lint --diagnostic-level=error .biome/fixtures/good.js >/dev/null 2>&1; then
+  echo "HTML sinks rule: it flags something in .biome/fixtures/good.js"
   status=1
 else
-  echo "HTML sinks: none"
+  echo "HTML sinks rule: flags all $(echo "$expected" | wc -w | tr -d ' ') bad examples, none of the good ones"
 fi
 
 exit "$status"
