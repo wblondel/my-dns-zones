@@ -23,7 +23,6 @@ D('williamgeraldblondel.com', REG_DYNADOT,
 
     DMARC_BUILDER({
         policy: 'reject',
-        percent: 100,
         alignmentSPF: 's',
         alignmentDKIM: 's',
         rua: [
