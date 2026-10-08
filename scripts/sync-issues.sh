@@ -11,6 +11,10 @@
 #                  the status page.
 #   dns-drift      FILE is the report of "dnscontrol preview --report". A problem is a domain
 #                  with corrections.
+#   zonemaster     FILE is the report written by scripts/zonemaster.sh. A problem is a domain
+#                  with an error (FAIL). Warnings never open an issue: they are in the run summary.
+#                  A domain that could not be scanned is left alone: its issue is neither updated
+#                  nor closed, and the script exits 1 once the others are done.
 #
 # The issues of a source carry its label, and a hidden marker with the source and the domain in
 # their body, which is how an issue is found again. Editing an issue notifies nobody, so an open
@@ -46,8 +50,12 @@ case $source in
     label_color=fbca04
     label_description='Raised by the DNS drift workflow'
     ;;
+  zonemaster)
+    label_color=5319e7
+    label_description='Raised by the Zonemaster workflow'
+    ;;
   *)
-    echo "Usage: $0 domain-health|dns-drift FILE" >&2
+    echo "Usage: $0 domain-health|dns-drift|zonemaster FILE" >&2
     exit 2
     ;;
 esac
@@ -109,9 +117,27 @@ group_by(.domain)
   })
 EOF
 
-# What to do, given the problems and the open issues of the source ({number, key}): update the
-# issue of a problem or open one, close the duplicates, and close the issues that are not a
-# problem any more.
+read -r -d '' ZONEMASTER_JQ <<'EOF' || true
+.domains
+| map(select(.result == "FAIL"))
+| map(
+    [.findings[] | select(.level != "WARNING")] as $errors
+    | {
+      key: .domain,
+      title: "Zonemaster: \(.domain)",
+      body: ("<!-- monitor:zonemaster:\(.domain) -->\n**\(.domain)** has \(plural($errors | length; "error")) in its Zonemaster scan:\n\n"
+        + ($errors | map("\(.level) \(.tag): \(.message)") | fence)
+        + (if .notes != "" then "\n\nNote on the scan:\n\n" + ([.notes] | fence) else "" end)
+        + "\n\nThe scan also reported \(plural(.counts.WARNING; "warning")) and \(plural(.counts.NOTICE; "notice")), which are in the summary of the run."
+        + " What the tags mean: [Zonemaster test cases](https://doc.zonemaster.net/latest/specifications/tests/README.html).\n\n"
+        + footer("the scan finds no error"))
+    })
+EOF
+
+# What to do, given the problems and the open issues of the source ({number, key}), and the keys
+# that could not be checked this time: update the issue of a problem or open one, close the
+# duplicates, and close the issues that are not a problem any more. The issue of a key that could
+# not be checked is left as it is.
 read -r -d '' PLAN_JQ <<'EOF' || true
 ($existing | group_by(.key) | map(sort_by(.number))) as $groups
 | ($groups | map({(.[0].key): .[0].number}) | add // {}) as $oldest
@@ -120,7 +146,7 @@ read -r -d '' PLAN_JQ <<'EOF' || true
     if $oldest[.key] != null then {op: "update", number: $oldest[.key], key: .key, title: .title, body: .body}
     else {op: "create", key: .key, title: .title, body: .body} end))
   + [$groups[] | .[1:][] | {op: "close", reason: "duplicate", number: .number, key: .key, of: $oldest[.key]}]
-  + [$groups[] | .[0] | select(.key as $k | $keys | index($k) | not) | {op: "close", reason: "resolved", number: .number, key: .key}]
+  + [$groups[] | .[0] | select(.key as $k | ($keys + $unchecked) | index($k) | not) | {op: "close", reason: "resolved", number: .number, key: .key}]
 | .[]
 EOF
 
@@ -133,10 +159,17 @@ case $source in
   domain-health)
     valid='.domains | type == "array" and length > 0'
     program=$DOMAIN_HEALTH_JQ
+    unchecked_program='[]'
     ;;
   dns-drift)
     valid='type == "array" and length > 0'
     program=$DNS_DRIFT_JQ
+    unchecked_program='[]'
+    ;;
+  zonemaster)
+    valid='.domains | type == "array" and length > 0'
+    program=$ZONEMASTER_JQ
+    unchecked_program='[.domains[] | select(.result == "UNKNOWN") | .domain]'
     ;;
 esac
 if ! jq -e "$valid" "$file" >/dev/null 2>&1; then
@@ -144,9 +177,12 @@ if ! jq -e "$valid" "$file" >/dev/null 2>&1; then
   exit 1
 fi
 problems=$(jq -c --arg updated "$updated" --arg run_url "$run_url" "$COMMON_JQ $program" "$file") || exit 1
-# Both checks only fail when they find a problem or when they break. A failure with no problem in
-# FILE is the second case, however clean FILE looks.
-if [ "${STEP_OUTCOME:-}" = failure ] && [ "$(jq 'length' <<<"$problems")" -eq 0 ]; then
+# The domains that could not be checked this time: their issues are left alone.
+unchecked=$(jq -c "$unchecked_program" "$file") || exit 1
+# The checks only fail when they find a problem, when a domain could not be checked, or when they
+# break. A failure with none of the first two in FILE is the third case, however clean FILE looks.
+if [ "${STEP_OUTCOME:-}" = failure ] && [ "$(jq 'length' <<<"$problems")" -eq 0 ] &&
+  [ "$(jq 'length' <<<"$unchecked")" -eq 0 ]; then
   echo "The step that wrote $file failed without reporting a problem: no issue was opened or closed" >&2
   exit 1
 fi
@@ -166,7 +202,8 @@ existing=$(jq -c --arg prefix "<!-- monitor:$source:" \
   '[.[] | select(.body | contains($prefix)) | {number, key: (.body | split($prefix)[1] | split(" -->")[0])}]' \
   <<<"$issues")
 
-plan=$(jq -nc --argjson problems "$problems" --argjson existing "$existing" "$PLAN_JQ") || exit 1
+plan=$(jq -nc --argjson problems "$problems" --argjson existing "$existing" --argjson unchecked "$unchecked" \
+  "$PLAN_JQ") || exit 1
 # The issues are public: the home IP must not show up in them.
 if [ -n "${HOME_IP:-}" ]; then
   plan=${plan//"$HOME_IP"/***}
@@ -243,6 +280,10 @@ while IFS= read -r op; do
 done <<<"$plan"
 
 echo "Issues of $source: $opened opened, $updated_count updated, $closed closed, $(jq 'length' <<<"$problems") in problem"
+if [ "$(jq 'length' <<<"$unchecked")" -gt 0 ]; then
+  echo "Could not be checked, so their issues were left as they are: $(jq -r 'join(", ")' <<<"$unchecked")" >&2
+  failures=$((failures + 1))
+fi
 if [ -n "${GITHUB_STEP_SUMMARY:-}" ] && [ -n "$summary" ]; then
   printf '### Issues\n\n%s\n' "$summary" >>"$GITHUB_STEP_SUMMARY"
 fi

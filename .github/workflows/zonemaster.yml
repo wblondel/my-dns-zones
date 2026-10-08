@@ -1,0 +1,72 @@
+name: Zonemaster
+
+on:
+  schedule:
+    # The first of the month, at an odd minute: GitHub delays the runs that are scheduled on the hour.
+    - cron: '23 4 1 * *'
+  workflow_dispatch:
+  # Also on the pull requests that change this workflow, its script or the pinned Zonemaster image
+  # (which is what the updates of Dependabot are), to test them. The scan needs no secret, so it
+  # runs on the pull requests of Dependabot too: the new version shows its findings before the merge.
+  pull_request:
+    paths:
+      - .github/workflows/zonemaster.yml
+      - scripts/zonemaster.sh
+      - docker/zonemaster.Dockerfile
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # One run at a time, so that two runs cannot open the same issue twice.
+    concurrency:
+      group: zonemaster
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      issues: write
+    env:
+      JSON_OUTPUT: zonemaster-report.json
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Runs the Zonemaster tests against every domain of domains/, with the image pinned in
+      # docker/zonemaster.Dockerfile. The issues and the heartbeat come next, so a domain that fails
+      # does not stop the job here.
+      - name: Scan every domain with Zonemaster
+        id: scan
+        continue-on-error: true
+        env:
+          HOME_IP: ${{ secrets.HOME_IP }}
+        run: bash scripts/zonemaster.sh
+
+      # On master, a domain with an error is reported as an issue, opened when the error appears and
+      # closed once a scan no longer finds it, instead of a failed run notification every month. The
+      # run then stays green: it only fails if the issues cannot be updated, or if a domain could not
+      # be scanned.
+      - name: Open and close the issues
+        if: ${{ !cancelled() && github.ref == 'refs/heads/master' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HOME_IP: ${{ secrets.HOME_IP }}
+          STEP_OUTCOME: ${{ steps.scan.outcome }}
+        run: bash scripts/sync-issues.sh zonemaster zonemaster-report.json
+
+      # Anywhere else (the pull requests that test this workflow), an error fails the run.
+      - name: Fail if a scan found an error
+        if: steps.scan.outcome == 'failure' && github.ref != 'refs/heads/master'
+        run: exit 1
+
+      # Tells the heartbeat monitor that the run happened, whatever the result of the scan: the
+      # issues are for the errors, the monitor is for a schedule that stopped.
+      - name: Ping the heartbeat monitor
+        if: ${{ !cancelled() && github.ref == 'refs/heads/master' }}
+        env:
+          HEARTBEAT_URL: ${{ secrets.HEARTBEAT_ZONEMASTER_URL }}
+        run: bash scripts/heartbeat.sh
