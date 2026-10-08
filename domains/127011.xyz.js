@@ -27,7 +27,7 @@ D('127011.xyz', REG_DYNADOT,
     // Hosted services
     A('@', home_ip, CF_PROXY_ON),
     CNAME('www', '@', CF_PROXY_ON),
+    CNAME('databasus', '@', CF_PROXY_ON),
     CNAME('homeassistant', '@', CF_PROXY_ON),
-    CNAME('speedtest', '@', CF_PROXY_ON),
-    CNAME('auth', '@', CF_PROXY_ON),
+    CNAME('auth', '@', CF_PROXY_ON)
 );
