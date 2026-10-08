@@ -9,16 +9,51 @@ permissions:
   contents: read
 
 jobs:
-  domain-health:
+  check:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
       MIN_DAYS: 60
+      JSON_OUTPUT: site/status.json
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
+      # The status page must show failures too, so a failed check does not stop the job here.
       - name: Check DNSSEC and expiry of every domain
+        id: health
+        continue-on-error: true
         run: bash scripts/domain-health.sh
+
+      - name: Upload the status page
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: site
+
+      # Fail the run (and so notify) once the page has been uploaded.
+      - name: Fail if a check failed
+        if: steps.health.outcome == 'failure'
+        run: exit 1
+
+  deploy:
+    needs: check
+    # Also after a failed check, to show it on the page. Only from master: never from a branch.
+    if: ${{ !cancelled() && github.ref == 'refs/heads/master' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

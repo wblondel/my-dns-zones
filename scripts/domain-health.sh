@@ -18,6 +18,7 @@
 # Environment:
 #   DOMAINS_DIR  directory containing the domain files (default: domains/ at the repository root)
 #   MIN_DAYS     minimum number of days before expiry (default: 60)
+#   JSON_OUTPUT  when set, path of a JSON file to write the results to (read by the status page)
 
 set -uo pipefail
 
@@ -106,7 +107,7 @@ problem() {
 # check_domain domain expect_signed: sets result (OK, WARN or FAIL) and notes, and prints a row.
 check_domain() {
   local domain=$1 expect_signed=$2
-  local dns=- dnssec=- expiry=- status ad comment rdap date days
+  local dns=- dnssec=- expiry=- status ad comment rdap exp_date='' days=''
   result=OK
   notes=
 
@@ -137,14 +138,14 @@ check_domain() {
     problem FAIL "no RDAP server known for .${domain##*.}"
   elif ! fetch --header 'Accept: application/rdap+json' "$rdap"; then
     problem FAIL "RDAP lookup failed ($ERR)"
-  elif ! read -r date days < <(jq -r "$EXPIRY_JQ" <<<"$BODY"); then
+  elif ! read -r exp_date days < <(jq -r "$EXPIRY_JQ" <<<"$BODY"); then
     problem FAIL "RDAP answer could not be read"
   elif [ "$days" = '?' ]; then
     problem FAIL "RDAP does not give an expiration date"
   else
-    expiry="$date (${days}d)"
+    expiry="$exp_date (${days}d)"
     if [ "$days" -lt 0 ]; then
-      problem FAIL "expired on $date"
+      problem FAIL "expired on $exp_date"
     elif [ "$days" -lt "$MIN_DAYS" ]; then
       problem FAIL "expires in $days days, less than the $MIN_DAYS day minimum"
     fi
@@ -153,6 +154,14 @@ check_domain() {
   printf '%-*s  %-8s  %-6s  %-18s  %-6s  %s\n' "$width" "$domain" "$dns" "$dnssec" "$expiry" "$result" "$notes" |
     sed 's/[[:space:]]*$//'
   summary_rows+="| $domain | $dns | $dnssec | $expiry | $result | ${notes//|/\\|} |"$'\n'
+  json_rows+=$(jq -nc \
+    --arg domain "$domain" --arg result "$result" --arg dns "$dns" --arg dnssec "$dnssec" \
+    --argjson dnssec_expected "$([ "$expect_signed" = 1 ] && echo true || echo false)" \
+    --arg expires "$exp_date" --arg days "$days" --arg notes "$notes" \
+    '{domain: $domain, result: $result, dns: $dns,
+      dnssec: (if $dnssec == "-" then null else $dnssec end), dnssec_expected: $dnssec_expected,
+      expires: (if $expires == "" then null else $expires end),
+      days_left: ($days | tonumber? // null), notes: $notes}')$'\n'
 }
 
 # Collect the domains first, to size the first column of the table.
@@ -179,7 +188,7 @@ fi
 RDAP_BOOTSTRAP='' BOOTSTRAP_ERR=''
 if fetch https://data.iana.org/rdap/dns.json; then RDAP_BOOTSTRAP=$BODY; else BOOTSTRAP_ERR=$ERR; fi
 
-total=0 failed=0 warned=0 summary_rows='' annotations=''
+total=0 failed=0 warned=0 summary_rows='' annotations='' json_rows=''
 printf '%-*s  %-8s  %-6s  %-18s  %-6s  %s\n' "$width" DOMAIN DNS DNSSEC EXPIRES RESULT NOTES
 while read -r domain expect_signed; do
   check_domain "$domain" "$expect_signed"
@@ -192,6 +201,12 @@ done <<<"${targets%$'\n'}"
 
 echo
 echo "$total domains checked: $failed failed, $warned with warnings (minimum $MIN_DAYS days before expiry)"
+
+if [ -n "${JSON_OUTPUT:-}" ]; then
+  mkdir -p "$(dirname "$JSON_OUTPUT")"
+  jq -s --arg generated_at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" --argjson min_days "$MIN_DAYS" \
+    '{generated_at: $generated_at, min_days: $min_days, domains: .}' <<<"$json_rows" >"$JSON_OUTPUT"
+fi
 
 # GitHub Actions: annotations on the run, and the table on the run summary page.
 if [ -n "${GITHUB_ACTIONS:-}" ]; then

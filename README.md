@@ -91,6 +91,20 @@ scripts/domain-health.sh
 
 The `MIN_DAYS` environment variable changes the number of days before expiry (60 by default).
 
+### Status page
+
+The same workflow publishes the results as a status page, built from [`site/`](site) and deployed with GitHub Pages. It lists every domain, failures first, and shows a warning when its data is more than 36 hours old, which means the scheduled workflow stopped running. The page is only deployed from `master`.
+
+GitHub Pages must use **GitHub Actions** as its source (*Settings > Pages > Build and deployment > Source*).
+
+To preview the page locally:
+```sh
+JSON_OUTPUT=site/status.json scripts/domain-health.sh
+python3 -m http.server --directory site
+```
+
+Then open http://localhost:8000.
+
 ## Make changes
 
 The `master` branch is protected, it only accepts merges from PRs.
