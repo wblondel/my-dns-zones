@@ -12,6 +12,11 @@
     "TYPE": "DYNADOT",
     "key": "$DYNADOT_API_KEY"
   },
+  "spaceship": {
+    "TYPE": "SPACESHIP",
+    "api_key": "$SPACESHIP_API_KEY",
+    "api_secret": "$SPACESHIP_API_SECRET"
+  },
   "ovh": {
     "TYPE": "OVH",
     "app-key": "$OVH_APP_KEY",

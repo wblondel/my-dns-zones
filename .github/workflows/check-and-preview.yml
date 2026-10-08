@@ -10,9 +10,9 @@ jobs:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
       - name: DNSControl check
-        uses: wblondel/dnscontrol-action@1e2bf5dd6cf5ed180f6b5b5de10bde5b8fc4d5e1 # v4.26.0
+        uses: wblondel/dnscontrol-action@c47e0e742495410c31ac255276093a46c60f5fe7 # 5.3.0
         with:
-          args: check
+          args: check --variable home_ip=${{ secrets.HOME_IP }}
 
   preview:
     if: github.actor!= 'dependabot[bot]'
@@ -25,13 +25,15 @@ jobs:
       OVH_APP_KEY: ${{ secrets.OVH_APP_KEY }}
       OVH_APP_SECRET_KEY: ${{ secrets.OVH_APP_SECRET_KEY }}
       OVH_CONSUMER_KEY: ${{ secrets.OVH_CONSUMER_KEY }}
+      SPACESHIP_API_KEY: ${{ secrets.SPACESHIP_API_KEY }}
+      SPACESHIP_API_SECRET: ${{ secrets.SPACESHIP_API_SECRET }}
     needs: check
 
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
       - name: DNSControl preview
-        uses: wblondel/dnscontrol-action@1e2bf5dd6cf5ed180f6b5b5de10bde5b8fc4d5e1 # v4.26.0
+        uses: wblondel/dnscontrol-action@c47e0e742495410c31ac255276093a46c60f5fe7 # 5.3.0
         id: dnscontrol_preview
         with:
-          args: preview
+          args: preview --variable home_ip=${{ secrets.HOME_IP }}

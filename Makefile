@@ -14,7 +14,7 @@ version: build
 
 .PHONY: check # Check and validate dnsconfig.js
 check: build
-	@docker compose run --rm dnscontrol check
+	@docker compose run --rm dnscontrol check --variable home_ip=$(HOME_IP)
 
 .PHONY: check-creds # Do a small operation to verify credentials
 check-creds: build
@@ -31,7 +31,14 @@ preview: build
 ifndef DNSCONTROL_LOCAL_CREDS
 	$(error DNSCONTROL_LOCAL_CREDS is undefined)
 endif
-	@docker compose run --rm dnscontrol preview --creds $(DNSCONTROL_LOCAL_CREDS)
+	@docker compose run --rm dnscontrol preview --creds $(DNSCONTROL_LOCAL_CREDS) --variable home_ip=$(HOME_IP)
+
+.PHONY: push # Apply changes
+push: build
+ifndef DNSCONTROL_LOCAL_CREDS
+	$(error DNSCONTROL_LOCAL_CREDS is undefined)
+endif
+	@docker compose run --rm dnscontrol push --creds $(DNSCONTROL_LOCAL_CREDS) --variable home_ip=$(HOME_IP)
 
 .PHONY: write-types
 write-types:
