@@ -146,12 +146,14 @@ The `master` branch is protected, it only accepts merges from PRs.
 
 You must first create a branch, then make your changes there and create a PR.
 
-The scripts in `scripts/` and the workflows in `.github/workflows/` are linted on every PR by the [Lint](.github/workflows/lint.yml) workflow, with [ShellCheck](https://www.shellcheck.net) and [actionlint](https://github.com/rhysd/actionlint). To check your changes before pushing them, run the same thing locally (it needs Docker, and only looks at the files tracked by Git, so `git add` new ones first):
+The scripts in `scripts/`, the workflows in `.github/workflows/` and the JavaScript of the status page in `site/` are linted on every PR by the [Lint](.github/workflows/lint.yml) workflow, with [ShellCheck](https://www.shellcheck.net), [actionlint](https://github.com/rhysd/actionlint) and [Biome](https://biomejs.dev). The other `.js` files are `dnscontrol` configuration, so they are not linted. To check your changes before pushing them, run the same thing locally (it needs Docker, and only looks at the files tracked by Git, so `git add` new ones first):
 ```sh
 scripts/lint.sh
 ```
 
-The versions of the two tools are pinned by tag and digest in [`docker/lint.Dockerfile`](docker/lint.Dockerfile). That file is never built: it only lists the images as `FROM` lines, so that Dependabot proposes their updates in a PR (the Lint check runs on that PR, so any new finding shows up before you merge it), and `scripts/lint.sh` reads the images from it. Keep its `FROM image AS name` format.
+The status page shows text that comes from DNS records and from the resolvers, so its JavaScript may only set text: using `innerHTML`, `outerHTML`, `insertAdjacentHTML`, `document.write`, `eval()` or `new Function()` fails the check too.
+
+The versions of the three tools are pinned by tag and digest in [`docker/lint.Dockerfile`](docker/lint.Dockerfile). That file is never built: it only lists the images as `FROM` lines, so that Dependabot proposes their updates in a PR (the Lint check runs on that PR, so any new finding shows up before you merge it), and `scripts/lint.sh` reads the images from it. Keep its `FROM image AS name` format.
 
 Secrets are defined as environment's secrets on GitHub, and are used in the `creds.json` file.
 
