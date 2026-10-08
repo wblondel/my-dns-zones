@@ -6,25 +6,40 @@
 # Usage: scripts/lint.sh
 #
 # Requires Docker. The tools run from their official images, pinned by tag and digest so that a
-# new release cannot turn a pull request red by surprise. To update one, pick the new tag, take its
-# digest from "docker buildx imagetools inspect IMAGE:TAG", and change both below.
+# new release cannot turn a pull request red by surprise. The pins are in docker/lint.Dockerfile,
+# which is never built: Dependabot keeps its FROM lines up to date, and this script reads them.
 
 set -uo pipefail
 
-SHELLCHECK_IMAGE=koalaman/shellcheck:v0.11.0@sha256:61862eba1fcf09a484ebcc6feea46f1782532571a34ed51fedf90dd25f925a8d
-ACTIONLINT_IMAGE=rhysd/actionlint:1.7.12@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667
-
 cd "$(dirname "${BASH_SOURCE[0]}")/.." || exit 1
+
+# image NAME: the image of the "FROM image AS NAME" line of docker/lint.Dockerfile.
+image() {
+  local ref
+  if [ ! -r docker/lint.Dockerfile ]; then
+    echo "docker/lint.Dockerfile not found" >&2
+    return 1
+  fi
+  ref=$(sed -nE "s/^FROM[[:space:]]+([^[:space:]]+)[[:space:]]+AS[[:space:]]+$1[[:space:]]*\$/\1/p" docker/lint.Dockerfile)
+  if [ -z "$ref" ]; then
+    echo "docker/lint.Dockerfile has no \"FROM image AS $1\" line" >&2
+    return 1
+  fi
+  echo "$ref"
+}
+
+SHELLCHECK_IMAGE=$(image shellcheck) || exit 1
+ACTIONLINT_IMAGE=$(image actionlint) || exit 1
 status=0
 
-echo "ShellCheck: $(git ls-files '*.sh' | tr '\n' ' ')"
+echo "ShellCheck ($SHELLCHECK_IMAGE): $(git ls-files '*.sh' | tr '\n' ' ')"
 if git ls-files -z '*.sh' | xargs -0 docker run --rm -v "$PWD:/mnt" -w /mnt "$SHELLCHECK_IMAGE"; then
   echo "ShellCheck: clean"
 else
   status=1
 fi
 
-echo "actionlint: $(git ls-files '.github/workflows' | tr '\n' ' ')"
+echo "actionlint ($ACTIONLINT_IMAGE): $(git ls-files '.github/workflows' | tr '\n' ' ')"
 if docker run --rm -v "$PWD:/repo" -w /repo "$ACTIONLINT_IMAGE" -color=false; then
   echo "actionlint: clean"
 else

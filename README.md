@@ -141,7 +141,7 @@ The scripts in `scripts/` and the workflows in `.github/workflows/` are linted o
 scripts/lint.sh
 ```
 
-The versions of the two tools are pinned by tag and digest in `scripts/lint.sh`. To update one, take the digest of the new tag from `docker buildx imagetools inspect IMAGE:TAG` and change both.
+The versions of the two tools are pinned by tag and digest in [`docker/lint.Dockerfile`](docker/lint.Dockerfile). That file is never built: it only lists the images as `FROM` lines, so that Dependabot proposes their updates in a PR (the Lint check runs on that PR, so any new finding shows up before you merge it), and `scripts/lint.sh` reads the images from it. Keep its `FROM image AS name` format.
 
 Secrets are defined as environment's secrets on GitHub, and are used in the `creds.json` file.
 
