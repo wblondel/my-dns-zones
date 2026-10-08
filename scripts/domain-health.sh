@@ -6,7 +6,9 @@
 #   DNS     The SOA record is resolved through Google Public DNS (DNS-over-HTTPS), which
 #           validates DNSSEC. A broken chain of trust (e.g. the DS record at the registrar no
 #           longer matches the keys the zone is signed with) is answered with SERVFAIL, so
-#           anything other than NOERROR is a failure.
+#           anything other than NOERROR is a failure. Cloudflare is asked as well when Google
+#           cannot be reached or its answer looks wrong, and only a problem that both see is a
+#           failure: see check_dns.
 #   DNSSEC  A domain whose file contains a "// DNSSEC: on" comment must be answered with the AD
 #           (authenticated data) flag. This catches DNSSEC being quietly turned off, which a
 #           plain lookup would not notice. The reverse (validated, but not marked) only warns.
@@ -48,9 +50,10 @@ if [ "$FAIL_DAYS" -gt "$WARN_DAYS" ]; then
   exit 2
 fi
 
-# Status, AD flag and comment of a DNS-over-HTTPS answer, tab separated.
+# Status, AD flag and comment of a DNS-over-HTTPS answer, tab separated. The comment is a string
+# at Google (it explains DNSSEC failures), and null or a list of extended DNS errors at Cloudflare.
 read -r -d '' DOH_JQ <<'EOF' || true
-[(.Status // "?"), (.AD // false), (.Comment // "")] | @tsv
+[(.Status // "?"), (.AD // false), ((.Comment // "") | if type == "array" then join("; ") else tostring end)] | @tsv
 EOF
 
 # What RDAP says, tab separated: the expiration date (UTC) and the number of days left until
@@ -204,35 +207,140 @@ check_registry() {
   fi
 }
 
+# info MESSAGE: adds a note about the domain being checked, without changing its result.
+info() {
+  notes="$notes${notes:+; }$1"
+}
+
+# doh_url RESOLVER DOMAIN: the URL that asks a validating DNS-over-HTTPS resolver for the SOA
+# record of a domain, with the DNSSEC data (do=1). Both resolvers answer in the same JSON format.
+doh_url() {
+  case $1 in
+    google) echo "https://dns.google/resolve?name=$2&type=SOA&do=1" ;;
+    cloudflare) echo "https://cloudflare-dns.com/dns-query?name=$2&type=SOA&do=1" ;;
+  esac
+}
+
+# doh_query RESOLVER DOMAIN: asks a resolver for the SOA record of a domain. Sets Q_ERR, which is
+# empty when the answer could be read, then Q_STATUS (the DNS response code), Q_AD ("true" when the
+# answer is validated) and Q_COMMENT. A resolver that cannot be reached, rate limits or fails with a
+# 5xx error is not asked again in this run (down_google, down_cloudflare): when it is down, only the
+# first domain waits for it.
+doh_query() {
+  local resolver=$1 domain=$2 down=down_$1
+  Q_ERR='' Q_STATUS='' Q_AD='' Q_COMMENT=''
+  if [ -n "${!down:-}" ]; then
+    Q_ERR=${!down}
+    return 1
+  fi
+  # Cloudflare answers 400 without the accept header. The short timeout is because the other
+  # resolver is there to take over.
+  if ! fetch --header 'accept: application/dns-json' --max-time 10 --retry 1 --retry-delay 1 \
+    "$(doh_url "$resolver" "$domain")"; then
+    Q_ERR=$ERR
+    case $ERR in
+      "curl exit code"* | "HTTP 429" | "HTTP 5"*) printf -v "$down" '%s' "$ERR" ;;
+    esac
+    return 1
+  fi
+  if ! IFS=$'\t' read -r Q_STATUS Q_AD Q_COMMENT < <(jq -r "$DOH_JQ" <<<"$BODY"); then
+    Q_ERR="unreadable answer"
+    return 1
+  fi
+}
+
+# is_fine STATUS AD EXPECT_SIGNED: whether an answer has nothing to question: NOERROR, and
+# validated when the domain is marked "// DNSSEC: on".
+is_fine() {
+  [ "$1" = 0 ] && { [ "$3" != 1 ] || [ "$2" = true ]; }
+}
+
+# same_view STATUS AD STATUS AD: whether two answers say the same thing.
+same_view() {
+  [ "$1" = "$3" ] && { [ "$1" != 0 ] || [ "$2" = "$4" ]; }
+}
+
+# describe STATUS AD: an answer in words.
+describe() {
+  if [ "$1" != 0 ]; then
+    rcode_name "$1"
+  elif [ "$2" = true ]; then
+    echo "NOERROR (validated)"
+  else
+    echo "NOERROR (not validated)"
+  fi
+}
+
+# evaluate_answer STATUS AD COMMENT EXPECT_SIGNED: sets dns and dnssec from the answer of a
+# resolver, and records what is wrong with it.
+evaluate_answer() {
+  local status=$1 ad=$2 comment=$3 expect_signed=$4
+  if [ "$status" != 0 ]; then
+    dns=$(rcode_name "$status")
+    # On SERVFAIL, the resolvers explain DNSSEC validation failures in the comment. It is noise otherwise.
+    if [ "$status" = 2 ]; then comment=$(printf '%s' "$comment" | tr -d '[:cntrl:]'); else comment=; fi
+    problem FAIL "SOA lookup returned $dns${comment:+: $comment}"
+    return
+  fi
+  dns=NOERROR
+  if [ "$ad" = true ]; then dnssec=valid; else dnssec=off; fi
+  if [ "$expect_signed" = 1 ] && [ "$ad" != true ]; then
+    problem FAIL "DNSSEC is expected (// DNSSEC: on) but the answer is not validated"
+  elif [ "$expect_signed" = 0 ] && [ "$ad" = true ]; then
+    problem WARN "DNSSEC validates but the domain file has no // DNSSEC: on comment"
+  fi
+}
+
+# check_dns DOMAIN EXPECT_SIGNED: the SOA lookup, through two validating resolvers. Google answers
+# first. When it cannot be reached, or when its answer looks wrong (not NOERROR, or not validated
+# for a domain marked "// DNSSEC: on"), Cloudflare is asked as well before anything fails:
+# - both see the same problem: it is a failure,
+# - a resolver is down: the other one answers, and a note says so,
+# - they disagree: it is a warning, with both answers in the note.
+# It sets dns and dnssec, which are local variables of check_domain.
+check_dns() {
+  local domain=$1 expect_signed=$2
+  local g_err g_status g_ad g_comment
+
+  doh_query google "$domain"
+  g_err=$Q_ERR g_status=$Q_STATUS g_ad=$Q_AD g_comment=$Q_COMMENT
+  if [ -z "$g_err" ] && is_fine "$g_status" "$g_ad" "$expect_signed"; then
+    evaluate_answer "$g_status" "$g_ad" "$g_comment" "$expect_signed"
+    return
+  fi
+
+  doh_query cloudflare "$domain"
+  if [ -n "$g_err" ] && [ -n "$Q_ERR" ]; then
+    dns=ERROR
+    problem FAIL "SOA lookup failed on both resolvers (Google: $g_err; Cloudflare: $Q_ERR)"
+  elif [ -n "$g_err" ]; then
+    evaluate_answer "$Q_STATUS" "$Q_AD" "$Q_COMMENT" "$expect_signed"
+    info "answered by Cloudflare, Google failed ($g_err)"
+  elif [ -n "$Q_ERR" ]; then
+    evaluate_answer "$g_status" "$g_ad" "$g_comment" "$expect_signed"
+    info "not confirmed, Cloudflare failed ($Q_ERR)"
+  elif same_view "$g_status" "$g_ad" "$Q_STATUS" "$Q_AD"; then
+    evaluate_answer "$g_status" "$g_ad" "$g_comment" "$expect_signed"
+    info "confirmed by Cloudflare"
+  else
+    dns=$(rcode_name "$g_status")
+    if [ "$g_status" = 0 ]; then
+      if [ "$g_ad" = true ]; then dnssec=valid; else dnssec=off; fi
+    fi
+    problem WARN "resolvers disagree: Google $(describe "$g_status" "$g_ad"), Cloudflare $(describe "$Q_STATUS" "$Q_AD")"
+  fi
+}
+
 # check_domain domain expect_signed providers registrar: sets result (OK, WARN or FAIL) and
 # notes, and prints a row. registrar is the name to show, or "-".
 check_domain() {
   local domain=$1 expect_signed=$2 providers=$3 registrar=$4
-  local dns=- dnssec=- expiry=- status ad comment rdap exp_date='' days='' locked signed delegated
+  local dns=- dnssec=- expiry=- rdap exp_date='' days='' locked signed delegated
   local provider provider_names
   result=OK
   notes=
 
-  if ! fetch "https://dns.google/resolve?name=$domain&type=SOA&do=1"; then
-    dns=ERROR
-    problem FAIL "SOA lookup failed ($ERR)"
-  elif ! IFS=$'\t' read -r status ad comment < <(jq -r "$DOH_JQ" <<<"$BODY"); then
-    dns=ERROR
-    problem FAIL "SOA lookup returned an unreadable answer"
-  elif [ "$status" != 0 ]; then
-    dns=$(rcode_name "$status")
-    # On SERVFAIL, Google explains DNSSEC validation failures in the comment. It is noise otherwise.
-    if [ "$status" = 2 ]; then comment=$(printf '%s' "$comment" | tr -d '[:cntrl:]'); else comment=; fi
-    problem FAIL "SOA lookup returned $dns${comment:+: $comment}"
-  else
-    dns=NOERROR
-    if [ "$ad" = true ]; then dnssec=valid; else dnssec=off; fi
-    if [ "$expect_signed" = 1 ] && [ "$ad" != true ]; then
-      problem FAIL "DNSSEC is expected (// DNSSEC: on) but the answer is not validated"
-    elif [ "$expect_signed" = 0 ] && [ "$ad" = true ]; then
-      problem WARN "DNSSEC validates but the domain file has no // DNSSEC: on comment"
-    fi
-  fi
+  check_dns "$domain" "$expect_signed"
 
   if [ -z "$RDAP_BOOTSTRAP" ]; then
     problem FAIL "RDAP servers are unknown: IANA bootstrap file unavailable ($BOOTSTRAP_ERR)"
@@ -309,7 +417,9 @@ if [ -z "$targets" ]; then
   exit 2
 fi
 
-RDAP_BOOTSTRAP='' BOOTSTRAP_ERR=''
+# down_google and down_cloudflare are read by name in doh_query, which ShellCheck cannot see.
+# shellcheck disable=SC2034
+RDAP_BOOTSTRAP='' BOOTSTRAP_ERR='' down_google='' down_cloudflare=''
 if fetch https://data.iana.org/rdap/dns.json; then RDAP_BOOTSTRAP=$BODY; else BOOTSTRAP_ERR=$ERR; fi
 
 total=0 failed=0 warned=0 summary_rows='' annotations='' json_rows=''
