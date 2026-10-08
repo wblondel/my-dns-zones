@@ -127,7 +127,7 @@ read -r -d '' ZONEMASTER_JQ <<'EOF' || true
       title: "Zonemaster: \(.domain)",
       body: ("<!-- monitor:zonemaster:\(.domain) -->\n**\(.domain)** has \(plural($errors | length; "error")) in its Zonemaster scan:\n\n"
         + ($errors | map("\(.level) \(.tag): \(.message)") | fence)
-        + (if .notes != "" then "\n\nNote on the scan:\n\n" + ([.notes] | fence) else "" end)
+        + (if .notes != "" then "\n\nNote on the scan:\n\n" + (.notes | split("; ") | fence) else "" end)
         + "\n\nThe scan also reported \(plural(.counts.WARNING; "warning")) and \(plural(.counts.NOTICE; "notice")), which are in the summary of the run."
         + " What the tags mean: [Zonemaster test cases](https://doc.zonemaster.net/latest/specifications/tests/README.html).\n\n"
         + footer("the scan finds no error"))

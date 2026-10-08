@@ -10,10 +10,11 @@
 # Every finding has a level. A domain FAILs when it has a CRITICAL or an ERROR finding, which has
 # to be fixed. It WARNs when it has a WARNING, which should be fixed unless there is a reason not
 # to, and it is OK otherwise: the NOTICEs are only counted. A scan that finds an error, or that does
-# not complete, is run a second time after a pause, and the second one counts: an error that was a
-# network hiccup then does not fail the domain. A domain that could not be scanned is UNKNOWN. That
-# is not a finding about the domain, but it fails the run: a check that did not run is not a
-# domain that passed.
+# not complete, is run again after a pause, up to three scans in all, and the last one that
+# completed counts: an error that was a network hiccup then does not fail the domain, even when the
+# second scan landed in the same hiccup as the first. A domain that could not be scanned is
+# UNKNOWN. That is not a finding about the domain, but it fails the run: a check that did not run
+# is not a domain that passed.
 #
 # Usage: scripts/zonemaster.sh [DOMAIN...]
 #   Without argument, every domain of domains/ is scanned.
@@ -27,7 +28,8 @@
 # Environment:
 #   DOMAINS_DIR  directory containing the domain files (default: domains/ at the repository root)
 #   JOBS         number of scans running at the same time (default: 4)
-#   RETRY_DELAY  seconds to wait before scanning again a domain (default: 30)
+#   RETRY_DELAY  seconds to wait before scanning a domain a second time (default: 30), and three
+#                times as long before a third time
 #   JSON_OUTPUT  when set, path of a JSON file to write the results to (read by sync-issues.sh)
 #   HOME_IP      hidden from everything it prints and writes: the runs of this repository are public
 
@@ -71,6 +73,38 @@ def count($level): [.[] | select(.level == $level)] | length;
 | .result = (if .counts.CRITICAL + .counts.ERROR > 0 then "FAIL" elif .counts.WARNING > 0 then "WARN" else "OK" end)
 EOF
 
+# The notes about the scans of a domain. The input is what each scan gave, in the order they ran:
+# {error: why it did not complete}, or the result of SCAN_JQ. The notes tell which errors earlier
+# scans reported that the scan that counts (the last one that completed) did not confirm, and which
+# scans did not complete. When none did, they tell why, and how many times. A domain is scanned
+# three times at most, which is as far as the ordinals go.
+read -r -d '' NOTES_JQ <<'EOF' || true
+def ordinal: ["first", "second", "third"][.];
+def times: ["once", "twice", "three times"][. - 1];
+def error_tags: [.findings[] | select(.level != "WARNING") | .tag] | unique;
+def named: if . == [0, 1] then "the first two scans" else "the \(.[0] | ordinal) scan" end;
+. as $scans
+| [range(0; length) | select($scans[.] | has("result"))] as $done
+| if $done == [] then
+    [$scans[].error] as $why
+    | if ($why | unique | length) == 1 then "\($why[0]) (\($why | length | times))"
+      else "\($why[-1]) (\([range(0; ($why | length) - 1) | "\(ordinal) scan: \($why[.])"] | join("; ")))"
+      end
+  else
+    $done[-1] as $last
+    | ($scans[$last] | error_tags) as $kept
+    | [$done[] | select(. < $last) | {at: ., tags: ($scans[.] | error_tags - $kept)} | select(.tags != [])] as $unconfirmed
+    | ([if $unconfirmed != [] then
+          {at: $unconfirmed[0].at,
+           text: "\($unconfirmed | map(.at) | named) reported errors that the \($last | ordinal) one did not: \($unconfirmed | map(.tags) | add | unique | join(", "))"}
+        else empty end]
+       + [range(0; length) as $i | select($scans[$i] | has("error"))
+          | {at: $i,
+             text: "the \($i | ordinal) scan\(if $done[0] < $i then ", run to confirm the errors," else "" end) did not complete (\($scans[$i].error))"}])
+    | sort_by(.at) | map(.text) | join("; ")
+  end
+EOF
+
 # scan_once DOMAIN FILE: runs one scan and writes the JSON of the Zonemaster CLI to FILE. Returns 1,
 # with the reason in SCAN_ERR, when the scan did not complete. The CLI exits with 0 whatever it
 # finds, so another exit code is a crash or a name it refuses. The level is INFO because every
@@ -94,45 +128,40 @@ scan_once() {
   fi
 }
 
-# scan_domain DOMAIN DIR: scans a domain, a second time when the first scan found an error or did
-# not complete, and writes the outcome (see SCAN_JQ, plus the domain and notes about the scans) to
-# DIR/DOMAIN.json. This runs in parallel, one process per domain, and always succeeds.
+# scan_domain DOMAIN DIR: scans a domain, and scans it again, up to three scans in all, as long as
+# a scan finds an error or does not complete. The pauses grow: RETRY_DELAY seconds before the second
+# scan, three times as many before the third. The last scan that completed counts, so an error that
+# lasts is reported with the findings of the last scan, and the domain is UNKNOWN only if none
+# completed. It writes the outcome (see SCAN_JQ, plus the domain and notes about the scans, see
+# NOTES_JQ) to DIR/DOMAIN.json. This runs in parallel, one process per domain, and always succeeds.
 scan_domain() {
-  local domain=$1 dir=$2 start=$SECONDS first='' record='' notes='' err=''
+  local domain=$1 dir=$2 start=$SECONDS attempt pause=$RETRY_DELAY record='' scans='' notes='' count=''
 
-  if scan_once "$domain" "$dir/$domain.1"; then
-    first=$(jq -c "$SCAN_JQ" "$dir/$domain.1")
-  else
-    err=$SCAN_ERR
-  fi
-  record=$first
-
-  if [ -z "$first" ] || [ "$(jq -r .result <<<"$first")" = FAIL ]; then
-    sleep "$RETRY_DELAY"
-    if scan_once "$domain" "$dir/$domain.2"; then
-      record=$(jq -c "$SCAN_JQ" "$dir/$domain.2")
-      if [ -z "$first" ]; then
-        notes="the first scan did not complete ($err)"
-      elif [ "$(jq -r .result <<<"$record")" != FAIL ]; then
-        notes="the first scan reported errors that the second one did not: $(jq -r '[.findings[] | select(.level != "WARNING") | .tag] | unique | join(", ")' <<<"$first")"
-      fi
-    elif [ -n "$first" ]; then
-      notes="the second scan, run to confirm the errors, did not complete ($SCAN_ERR)"
-    elif [ "$SCAN_ERR" = "$err" ]; then
-      err="$err (twice)"
-    else
-      err="$SCAN_ERR (first scan: $err)"
+  for attempt in 1 2 3; do
+    if [ "$attempt" -gt 1 ]; then
+      sleep "$pause"
+      pause=$((pause * 3))
     fi
-  fi
+    if scan_once "$domain" "$dir/$domain.$attempt"; then
+      record=$(jq -c "$SCAN_JQ" "$dir/$domain.$attempt")
+      scans+="${scans:+,}$record"
+      [ "$(jq -r .result <<<"$record")" = FAIL ] || break
+    else
+      scans+="${scans:+,}$(jq -nc --arg error "$SCAN_ERR" '{error: $error}')"
+    fi
+  done
+  notes=$(jq -r "$NOTES_JQ" <<<"[$scans]")
 
+  # The record is the one of the last scan that completed, or there is none.
   if [ -z "$record" ]; then
-    record=$(jq -nc --arg domain "$domain" --arg notes "$err" \
+    record=$(jq -nc --arg domain "$domain" --arg notes "$notes" \
       '{domain: $domain, result: "UNKNOWN", engine: null, counts: null, findings: [], notes: $notes}')
   else
     record=$(jq -c --arg domain "$domain" --arg notes "$notes" '. + {domain: $domain, notes: $notes}' <<<"$record")
   fi
   printf '%s\n' "$record" >"$dir/$domain.json"
-  echo "  $domain: $(jq -r .result <<<"$record") after $((SECONDS - start)) s"
+  if [ "$attempt" -gt 1 ]; then count=" ($attempt scans)"; fi
+  echo "  $domain: $(jq -r .result <<<"$record") after $((SECONDS - start)) s$count"
 }
 
 # The worker mode, which the scans of the next part are run with.

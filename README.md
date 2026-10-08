@@ -123,7 +123,7 @@ The [Zonemaster](.github/workflows/zonemaster.yml) workflow runs [`scripts/zonem
 
 Every finding has a level, from `NOTICE` up to `CRITICAL`:
 
-- a domain with an `ERROR` or a `CRITICAL` finding fails. A scan that finds one is run a second time after 30 seconds, and the second one counts, so an error that was a network hiccup does not fail the domain;
+- a domain with an `ERROR` or a `CRITICAL` finding fails. A scan that finds one, or that does not complete, is run again after 30 seconds, and a third time after 90 more seconds if the second scan is no better. The last scan that completed counts, so an error only fails the domain if it survives three scans: a network hiccup does not;
 - a domain with a `WARNING` only raises a warning. It should be fixed unless there is a reason not to, but it is not urgent, and some warnings are expected: all the nameservers of a domain being at one provider (`IPV4_ONE_ASN`), or a parked domain not being signed (`DS07_NOT_SIGNED`), for example;
 - the `NOTICE`s are only counted.
 
@@ -137,7 +137,7 @@ scripts/zonemaster.sh                # every domain of domains/
 scripts/zonemaster.sh example.com    # only the domains you name
 ```
 
-A scan takes about 30 seconds. The image only exists for amd64, so Docker emulates it on Apple Silicon, which is slower. The `JOBS` environment variable changes the number of scans that run at the same time (4 by default), and `RETRY_DELAY` the pause before the second scan of a domain (30 seconds by default).
+A scan takes about 30 seconds. The image only exists for amd64, so Docker emulates it on Apple Silicon, which is slower. The `JOBS` environment variable changes the number of scans that run at the same time (4 by default), and `RETRY_DELAY` the pause before the second scan of a domain (30 seconds by default, and three times as long before a third scan).
 
 ## Issues
 
