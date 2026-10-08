@@ -18,6 +18,11 @@
 #           below. A domain marked "// DNSSEC: on" must have a DS record: RDAP shows a removed
 #           one right away, while resolvers may keep validating from their cache.
 #
+# The status page also shows the registrar and the DNS provider of each domain, read from its
+# file: the REG_ constant of the D() call (or, for a registrar that dnscontrol does not support
+# and that is declared as REG_NONE, the name in a "// Registrar: Name" comment), and the
+# DnsProvider(DSP_...) constants. The label function gives the names shown.
+#
 # Requires bash, curl and jq. Exits with 1 if any check fails (warnings do not fail).
 #
 # Environment:
@@ -136,6 +141,25 @@ provider_nameservers() {
   esac
 }
 
+# label NAME: the name to show for a REG_ or DSP_ constant of globals/providers.js, or "-" when
+# there is nothing to show. Add the constants you add there. The others get a name made from
+# theirs (REG_FOO_BAR is shown as "Foo bar").
+label() {
+  local name
+  case $1 in
+    '' | REG_NONE) echo - ;;
+    REG_DYNADOT) echo Dynadot ;;
+    REG_OVH) echo OVH ;;
+    REG_SPACESHIP | DSP_SPACESHIP) echo Spaceship ;;
+    DSP_DESEC) echo deSEC ;;
+    DSP_CLOUDFLARE) echo Cloudflare ;;
+    *)
+      name=$(printf '%s' "${1#*_}" | tr '[:upper:]_' '[:lower:] ')
+      echo "$(printf '%s' "${name:0:1}" | tr '[:lower:]' '[:upper:]')${name:1}"
+      ;;
+  esac
+}
+
 # check_registry providers expect_signed locked signed delegated: what the registry reports.
 # providers is the comma separated DSP_ names declared in the domain file, or "-".
 check_registry() {
@@ -180,11 +204,12 @@ check_registry() {
   fi
 }
 
-# check_domain domain expect_signed providers: sets result (OK, WARN or FAIL) and notes, and
-# prints a row.
+# check_domain domain expect_signed providers registrar: sets result (OK, WARN or FAIL) and
+# notes, and prints a row. registrar is the name to show, or "-".
 check_domain() {
-  local domain=$1 expect_signed=$2 providers=$3
+  local domain=$1 expect_signed=$2 providers=$3 registrar=$4
   local dns=- dnssec=- expiry=- status ad comment rdap exp_date='' days='' locked signed delegated
+  local provider provider_names
   result=OK
   notes=
 
@@ -236,11 +261,19 @@ check_domain() {
   printf '%-*s  %-8s  %-6s  %-18s  %-6s  %s\n' "$width" "$domain" "$dns" "$dnssec" "$expiry" "$result" "$notes" |
     sed 's/[[:space:]]*$//'
   summary_rows+="| $domain | $dns | $dnssec | $expiry | $result | ${notes//|/\\|} |"$'\n'
+  # The names of the DNS providers, as a JSON array ([] when the file declares none).
+  provider_names=$(
+    for provider in ${providers//,/ }; do
+      if [ "$provider" != - ]; then label "$provider"; fi
+    done | jq -R . | jq -sc .
+  )
   json_rows+=$(jq -nc \
     --arg domain "$domain" --arg result "$result" --arg dns "$dns" --arg dnssec "$dnssec" \
     --argjson dnssec_expected "$([ "$expect_signed" = 1 ] && echo true || echo false)" \
     --arg expires "$exp_date" --arg days "$days" --arg notes "$notes" \
-    '{domain: $domain, result: $result, dns: $dns,
+    --arg registrar "$registrar" --argjson dns_providers "$provider_names" \
+    '{domain: $domain, registrar: (if $registrar == "-" then null else $registrar end),
+      dns_providers: $dns_providers, result: $result, dns: $dns,
       dnssec: (if $dnssec == "-" then null else $dnssec end), dnssec_expected: $dnssec_expected,
       expires: (if $expires == "" or $expires == "?" then null else $expires end),
       days_left: ($days | tonumber? // null), notes: $notes}')$'\n'
@@ -258,9 +291,15 @@ for file in "$DOMAINS_DIR"/*.js; do
   # The DNS providers of the file, without the commented out ones: DSP_DESEC,DSP_CLOUDFLARE
   providers=$(grep -vE '^[[:space:]]*//' "$file" | grep -oE 'DnsProvider\([[:space:]]*DSP_[A-Za-z0-9_]+' |
     sed -E 's/.*(DSP_[A-Za-z0-9_]+)$/\1/' | sort -u | paste -sd, -)
+  # The registrar to show: the name in a "// Registrar: Name" comment, which is for the registrars
+  # that dnscontrol does not support (REG_NONE), or else the name of the REG_ constant of the file.
+  registrar=$(sed -nE 's#^[[:space:]]*//[[:space:]]*[Rr]egistrar:[[:space:]]*(.*[^[:space:]])[[:space:]]*$#\1#p' "$file" | head -1)
+  if [ -z "$registrar" ]; then
+    registrar=$(label "$(sed -E 's://.*$::' "$file" | grep -oE 'REG_[A-Za-z0-9_]+' | head -1)")
+  fi
   # "|| [ -n ... ]": sed does not end its last line with a newline when the file does not either.
   while IFS= read -r domain || [ -n "$domain" ]; do
-    targets+="$domain $expect_signed ${providers:--}"$'\n'
+    targets+="$domain $expect_signed ${providers:--} $registrar"$'\n'
     if [ "${#domain}" -gt "$width" ]; then width=${#domain}; fi
   done < <(sed -nE "s/^[[:space:]]*D\([[:space:]]*['\"]([^'\"]+)['\"].*/\1/p" "$file")
 done
@@ -275,8 +314,8 @@ if fetch https://data.iana.org/rdap/dns.json; then RDAP_BOOTSTRAP=$BODY; else BO
 
 total=0 failed=0 warned=0 summary_rows='' annotations='' json_rows=''
 printf '%-*s  %-8s  %-6s  %-18s  %-6s  %s\n' "$width" DOMAIN DNS DNSSEC EXPIRES RESULT NOTES
-while read -r domain expect_signed providers; do
-  check_domain "$domain" "$expect_signed" "$providers"
+while read -r domain expect_signed providers registrar; do
+  check_domain "$domain" "$expect_signed" "$providers" "$registrar"
   total=$((total + 1))
   case $result in
     FAIL) failed=$((failed + 1)); annotations+="::error title=Domain health::$domain: $notes"$'\n' ;;

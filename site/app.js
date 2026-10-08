@@ -41,6 +41,10 @@ function resultKey(domain) {
   return Object.prototype.hasOwnProperty.call(SEVERITY, domain.result) ? domain.result : 'FAIL';
 }
 
+function textOrDash(value) {
+  return value ? el('span', null, value) : el('span', 'muted', '—');
+}
+
 function dnssecNode(domain) {
   const label = domain.dnssec === 'valid' ? 'Valid' : domain.dnssec === 'off' ? 'Off' : '—';
   const node = el('span', null, label);
@@ -74,7 +78,9 @@ function renderRows(domain, status) {
   row.append(
     cell('Domain', name),
     cell('Status', el('span', 'pill ' + key.toLowerCase(), LABEL[key])),
-    cell('DNS', el('span', null, domain.dns || '—')),
+    cell('Registrar', textOrDash(domain.registrar)),
+    cell('DNS provider', textOrDash((domain.dns_providers || []).join(', '))),
+    cell('Lookup', el('span', null, domain.dns || '—')),
     cell('DNSSEC', dnssecNode(domain)),
     cell('Expires', expiresNode(domain, status)),
   );
@@ -83,7 +89,7 @@ function renderRows(domain, status) {
   if (domain.notes) {
     const note = el('tr', 'notes');
     const td = el('td', null, domain.notes);
-    td.colSpan = 5;
+    td.colSpan = 7;
     note.append(td);
     rows.push(note);
   }

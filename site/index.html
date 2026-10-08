@@ -25,7 +25,9 @@
         <tr>
           <th scope="col">Domain</th>
           <th scope="col">Status</th>
-          <th scope="col">DNS</th>
+          <th scope="col">Registrar</th>
+          <th scope="col">DNS provider</th>
+          <th scope="col">Lookup</th>
           <th scope="col">DNSSEC</th>
           <th scope="col">Expires</th>
         </tr>
@@ -37,7 +39,8 @@
 
     <footer>
       <p>
-        <strong>DNS</strong>: the SOA record is resolved through a DNSSEC-validating resolver (Google Public DNS).
+        <strong>Registrar</strong> and <strong>DNS provider</strong> are the ones declared in the domain’s file in the repository.
+        <strong>Lookup</strong>: the SOA record is resolved through a DNSSEC-validating resolver (Google Public DNS).
         <strong>DNSSEC</strong>: the answer is validated by that resolver. “Expected” means the domain must keep validating, otherwise it fails.
         <strong>Expires</strong>: from the registry’s RDAP server, in UTC.
       </p>

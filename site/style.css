@@ -42,7 +42,7 @@ body {
 }
 
 main {
-  max-width: 960px;
+  max-width: 1120px;
   margin: 0 auto;
   padding: 32px 16px 48px;
 }
@@ -93,7 +93,7 @@ table {
 }
 
 th, td {
-  padding: 10px 16px;
+  padding: 10px 12px;
   text-align: left;
   vertical-align: baseline;
 }
@@ -168,7 +168,7 @@ footer {
   font-size: 0.875rem;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 1080px) {
   thead {
     display: none;
   }
