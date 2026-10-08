@@ -1,0 +1,50 @@
+name: DNS drift
+
+on:
+  schedule:
+    - cron: '41 3 * * *'
+  workflow_dispatch:
+  # Also on the pull requests that change this workflow or its report, to test them.
+  pull_request:
+    paths:
+      - .github/workflows/dns-drift.yml
+      - scripts/dns-drift-report.sh
+
+permissions:
+  contents: read
+
+jobs:
+  drift:
+    if: github.actor != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Fails when a provider holds records that differ from the ones in this repository, for
+      # example after a change made in a provider's dashboard. Nothing is changed at the providers.
+      - name: Compare the live DNS records with the repository
+        id: drift
+        uses: wblondel/dnscontrol-action@c47e0e742495410c31ac255276093a46c60f5fe7 # 5.3.0
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          DESEC_API_TOKEN: ${{ secrets.DESEC_API_TOKEN }}
+          DYNADOT_API_KEY: ${{ secrets.DYNADOT_API_KEY }}
+          OVH_APP_KEY: ${{ secrets.OVH_APP_KEY }}
+          OVH_APP_SECRET_KEY: ${{ secrets.OVH_APP_SECRET_KEY }}
+          OVH_CONSUMER_KEY: ${{ secrets.OVH_CONSUMER_KEY }}
+          SPACESHIP_API_KEY: ${{ secrets.SPACESHIP_API_KEY }}
+          SPACESHIP_API_SECRET: ${{ secrets.SPACESHIP_API_SECRET }}
+        with:
+          args: preview --expect-no-changes --report drift-report.json --variable home_ip=${{ secrets.HOME_IP }}
+
+      - name: Report the drift
+        if: ${{ !cancelled() }}
+        env:
+          DNSCONTROL_OUTCOME: ${{ steps.drift.outcome }}
+          HOME_IP: ${{ secrets.HOME_IP }}
+        run: bash scripts/dns-drift-report.sh drift-report.json
