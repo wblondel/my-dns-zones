@@ -1,0 +1,22 @@
+name: Lint
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # ShellCheck on the shell scripts, actionlint on the workflows. The versions are pinned in the script.
+      - name: Lint the scripts and the workflows
+        run: bash scripts/lint.sh

@@ -136,6 +136,13 @@ The `master` branch is protected, it only accepts merges from PRs.
 
 You must first create a branch, then make your changes there and create a PR.
 
+The scripts in `scripts/` and the workflows in `.github/workflows/` are linted on every PR by the [Lint](.github/workflows/lint.yml) workflow, with [ShellCheck](https://www.shellcheck.net) and [actionlint](https://github.com/rhysd/actionlint). To check your changes before pushing them, run the same thing locally (it needs Docker, and only looks at the files tracked by Git, so `git add` new ones first):
+```sh
+scripts/lint.sh
+```
+
+The versions of the two tools are pinned by tag and digest in `scripts/lint.sh`. To update one, take the digest of the new tag from `docker buildx imagetools inspect IMAGE:TAG` and change both.
+
 Secrets are defined as environment's secrets on GitHub, and are used in the `creds.json` file.
 
 ---
