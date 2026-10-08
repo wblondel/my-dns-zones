@@ -16,6 +16,8 @@ jobs:
       OVH_APP_KEY: ${{ secrets.OVH_APP_KEY }}
       OVH_APP_SECRET_KEY: ${{ secrets.OVH_APP_SECRET_KEY }}
       OVH_CONSUMER_KEY: ${{ secrets.OVH_CONSUMER_KEY }}
+      SPACESHIP_API_KEY: ${{ secrets.SPACESHIP_API_KEY }}
+      SPACESHIP_API_SECRET: ${{ secrets.SPACESHIP_API_SECRET }}
 
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
