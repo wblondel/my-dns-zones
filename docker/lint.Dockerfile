@@ -4,4 +4,4 @@
 # here. Keep the "FROM image AS name" format: the script looks the images up by their name.
 FROM koalaman/shellcheck:v0.11.0@sha256:61862eba1fcf09a484ebcc6feea46f1782532571a34ed51fedf90dd25f925a8d AS shellcheck
 FROM rhysd/actionlint:1.7.12@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667 AS actionlint
-FROM ghcr.io/biomejs/biome:2.4.10@sha256:7780c2a033f48236ddde877013dbeefef2798023ff423ff53d418bec246de621 AS biome
+FROM ghcr.io/biomejs/biome:2.5.15@sha256:e73b0563691da8c60ebfdb1553adea0c5d531752460e1672c1020d2d83a7e5d7 AS biome
